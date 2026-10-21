@@ -1,0 +1,72 @@
+export type UserRole = 'admin' | 'kader' | 'bidan' | 'kpm' | 'kepala_desa' | 'ibu';
+export type JenisKelamin = 'L' | 'P';
+export type CaraUkur = 'berbaring' | 'berdiri';
+export type StatusGizi = 'hijau' | 'kuning' | 'merah';
+export type StatusRujukan = 'belum' | 'sudah' | 'ada_hasil';
+
+export interface Profile {
+  id: string;
+  nama: string;
+  role: UserRole;
+  desa_id: number | null;
+  posyandu_id: number | null;
+}
+
+export interface Desa {
+  id: number;
+  nama: string;
+}
+
+export interface Posyandu {
+  id: number;
+  desa_id: number;
+  nama: string;
+  dusun: string;
+}
+
+export interface Anak {
+  id: string;
+  desa_id: number;
+  posyandu_id: number;
+  nama: string;
+  nik: string | null;
+  no_kk: string | null;
+  nama_ibu: string;
+  tgl_lahir: string;
+  jenis_kelamin: JenisKelamin;
+}
+
+export interface Pengukuran {
+  id: string; // uuid created on device with crypto.randomUUID()
+  anak_id: string;
+  desa_id: number;
+  posyandu_id: number;
+  tgl_ukur: string;
+  berat_kg: number;
+  tinggi_cm: number;
+  cara_ukur: CaraUkur;
+  berat_manual: boolean;
+  z_tbu?: number | null; // Calculated by DB trigger on insert
+  z_bbu?: number | null; // Calculated by DB trigger on insert
+  status?: StatusGizi | null; // Calculated by DB trigger on insert
+}
+
+export interface TindakLanjut {
+  id: number;
+  pengukuran_id: string;
+  anak_id: string;
+  desa_id: number;
+  posyandu_id: number;
+  tgl_kunjungan_ulang: string | null;
+  status_rujukan: StatusRujukan;
+  catatan: string | null;
+  selesai: boolean;
+  updated_at: string;
+}
+
+export interface Consent {
+  id: number;
+  anak_id: string;
+  diberikan_oleh: string;
+  versi_teks: string;
+}

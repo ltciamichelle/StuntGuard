@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-plus-jakarta: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}
+
+body {
+  background-color: #FAFAFA;
+  color: #192428;
+  font-family: var(--font-plus-jakarta);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Base text sizing for Kader screens: at least 16px */
+.text-kader-body {
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* Metric numbers: 24px or larger and Bold */
+.text-kader-metric {
+  font-size: 24px;
+  line-height: 1.25;
+  font-weight: 700;
+}
