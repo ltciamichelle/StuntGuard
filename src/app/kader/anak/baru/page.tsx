@@ -206,11 +206,23 @@ export default function RegisterChildPage() {
           return;
         }
 
+        let currentPosyanduId = 1;
+        const cookieMatch = typeof document !== 'undefined'
+          ? document.cookie.split('; ').find((row) => row.startsWith('sg_dev_session='))
+          : null;
+        if (cookieMatch) {
+          try {
+            const val = decodeURIComponent(cookieMatch.split('=')[1]);
+            const session = JSON.parse(val);
+            if (session.posyandu_id) currentPosyanduId = Number(session.posyandu_id);
+          } catch {}
+        }
+
         const generatedId = crypto.randomUUID();
         const localChild = {
           id: generatedId,
           desa_id: 1,
-          posyandu_id: 1,
+          posyandu_id: currentPosyanduId,
           nama: nama.trim(),
           nik: cleanNik ? cleanNik : null,
           no_kk: noKk.trim() ? noKk.trim() : null,

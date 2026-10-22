@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Anak, Pengukuran } from '@/types/database';
 import { calculateAgeInMonths, formatIndonesianDate } from '@/lib/utils';
-import { ArrowLeft, Printer, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, Printer } from 'lucide-react';
 import { Button } from '@/components/ui';
 
 export default function SuratRujukanPage() {

@@ -9,8 +9,6 @@ import { formatIndonesianDate } from '@/lib/utils';
 import { Anak, Pengukuran, TindakLanjut, StatusRujukan } from '@/types/database';
 import {
   ArrowLeft,
-  Calendar,
-  Clock,
   Phone,
   CheckCircle2,
   AlertTriangle,
@@ -18,11 +16,7 @@ import {
   X,
   History,
   Check,
-  User,
-  MessageCircle,
-  FileText,
   AlertCircle,
-  ChevronRight,
 } from 'lucide-react';
 
 export interface TindakLanjutItem extends TindakLanjut {
@@ -520,15 +514,15 @@ export default function TindakLanjutPage() {
 
                   {/* Two Big Buttons Per Card: "Hubungi ibu" and "Catat hasil kunjungan" */}
                   {!item.selesai && (
-                    <div className="mt-3.5 grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+                    <div className="mt-3.5 grid grid-cols-2 gap-3 pt-2 border-t border-slate-100">
                       {/* Button 1: Hubungi Ibu */}
                       <button
                         type="button"
                         id={`btn-hubungi-ibu-${item.id}`}
                         onClick={() => setSelectedMotherItem(item)}
-                        className="min-h-[48px] px-3 rounded-2xl bg-white border-2 border-slate-200 text-slate-800 hover:border-slateTeal hover:text-slateTeal active:bg-slate-100 font-bold text-[13px] flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm"
+                        className="min-h-[56px] px-3 rounded-2xl bg-white border-2 border-slate-200 text-slate-800 hover:border-slateTeal hover:text-slateTeal active:bg-slate-100 font-bold text-[14px] flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
                       >
-                        <Phone size={16} className="text-slateTeal" />
+                        <Phone size={18} className="text-slateTeal" />
                         <span>Hubungi Ibu</span>
                       </button>
 
@@ -537,9 +531,9 @@ export default function TindakLanjutPage() {
                         type="button"
                         id={`btn-catat-kunjungan-${item.id}`}
                         onClick={() => handleOpenCatatKunjungan(item)}
-                        className="min-h-[48px] px-3 rounded-2xl bg-berry hover:bg-berry-hover active:bg-berry-dark text-white font-bold text-[13px] flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md"
+                        className="min-h-[56px] px-3 rounded-2xl bg-berry hover:bg-berry-hover active:bg-berry-dark text-white font-bold text-[14px] flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
                       >
-                        <ClipboardCheck size={16} />
+                        <ClipboardCheck size={18} />
                         <span>Catat Hasil</span>
                       </button>
                     </div>
@@ -605,7 +599,7 @@ export default function TindakLanjutPage() {
               variant="secondary"
               fullWidth
               onClick={() => setSelectedMotherItem(null)}
-              className="min-h-[48px] text-[15px] font-bold"
+              className="min-h-[56px] text-[15px] font-bold"
             >
               Tutup
             </Button>
@@ -719,14 +713,14 @@ export default function TindakLanjutPage() {
             </div>
 
             {/* Save Buttons */}
-            <div className="pt-2 flex flex-col gap-2">
+            <div className="pt-2 flex flex-col gap-3">
               <Button
                 variant="primary"
                 fullWidth
                 id="btn-simpan-catatan-kunjungan"
                 loading={isSaving}
                 onClick={handleSaveKunjungan}
-                className="min-h-[52px] text-[15px] font-bold shadow-md"
+                className="min-h-[56px] text-[15px] font-bold shadow-md"
               >
                 Simpan Hasil Kunjungan
               </Button>
@@ -734,7 +728,7 @@ export default function TindakLanjutPage() {
               <button
                 type="button"
                 onClick={() => setEditingItem(null)}
-                className="py-2.5 text-center text-slate-600 font-bold text-[13px] hover:text-slate-900 transition-colors"
+                className="py-2.5 min-h-[44px] flex items-center justify-center text-center text-slate-600 font-bold text-[13px] hover:text-slate-900 transition-colors"
               >
                 Batal
               </button>
@@ -749,7 +743,7 @@ export default function TindakLanjutPage() {
           variant="secondary"
           fullWidth
           onClick={() => router.push('/kader')}
-          className="min-h-[52px] text-[15px] font-bold"
+          className="min-h-[56px] text-[15px] font-bold"
         >
           Kembali ke Beranda Kader
         </Button>

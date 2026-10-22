@@ -117,10 +117,13 @@ export function calculateZScores(
 
   let status: StatusGizi = 'hijau';
 
-  // Penentuan status gizi berdasarkan TB/U dan BB/U
-  if (z_tbu < -3 || z_bbu < -3) {
+  // Penentuan status gizi:
+  // Merah: Indikasi stunting (TB/U < -2 SD) atau gizi buruk berat (BB/U < -3 SD)
+  // Kuning: Risiko gagal tumbuh / berat stabil rendah (BB/U < -2 SD)
+  // Hijau: Pertumbuhan sesuai standar
+  if (z_tbu < -2 || z_bbu < -3) {
     status = 'merah';
-  } else if (z_tbu < -2 || z_bbu < -2) {
+  } else if (z_bbu < -2) {
     status = 'kuning';
   } else {
     status = 'hijau';

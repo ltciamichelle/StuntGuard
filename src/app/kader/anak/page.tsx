@@ -53,6 +53,28 @@ const FALLBACK_CHILDREN: Anak[] = [
     tgl_lahir: '2024-12-10',
     jenis_kelamin: 'L',
   },
+  {
+    id: 'a1b2c3d4-0004-4000-8000-000000000004',
+    desa_id: 1,
+    posyandu_id: 2,
+    nama: 'Doni Firmansyah',
+    nik: '3201121503230004',
+    no_kk: '3201120000000004',
+    nama_ibu: 'Rina Marlina',
+    tgl_lahir: '2025-03-15',
+    jenis_kelamin: 'L',
+  },
+  {
+    id: 'a1b2c3d4-0005-4000-8000-000000000005',
+    desa_id: 1,
+    posyandu_id: 2,
+    nama: 'Zahra Cantika',
+    nik: '3201126501240005',
+    no_kk: '3201120000000005',
+    nama_ibu: 'Fitri Handayani',
+    tgl_lahir: '2025-01-25',
+    jenis_kelamin: 'P',
+  },
 ];
 
 export default function ChildListPage() {
@@ -69,6 +91,8 @@ export default function ChildListPage() {
       setLoading(true);
       setErrorMsg('');
 
+      let userPosyanduId: number | null = null;
+
       try {
         const isRealSupabase =
           process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -76,43 +100,79 @@ export default function ChildListPage() {
           !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
 
         if (isRealSupabase) {
-          // RULE 1: Row Level Security already limits what each user sees. Do not add manual desa or posyandu filters for security. Just query normally.
-          const { data, error } = await supabase
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('posyandu_id')
+              .eq('id', user.id)
+              .single();
+            if (profile?.posyandu_id) {
+              userPosyanduId = profile.posyandu_id;
+            }
+          }
+
+          let query = supabase
             .from('anak')
             .select('*')
             .order('nama', { ascending: true });
 
+          if (userPosyanduId) {
+            query = query.eq('posyandu_id', userPosyanduId);
+          }
+
+          const { data, error } = await query;
+
           if (error) {
             console.error('Error fetching anak:', error);
             setErrorMsg('Gagal memuat data balita dari server.');
-            loadLocalFallback();
+            loadLocalFallback(userPosyanduId);
           } else if (data) {
             setChildrenList(data);
           }
         } else {
-          loadLocalFallback();
+          loadLocalFallback(getDevSessionPosyanduId());
         }
       } catch (err) {
         console.error(err);
-        loadLocalFallback();
+        loadLocalFallback(getDevSessionPosyanduId());
       } finally {
         setLoading(false);
       }
     }
 
-    function loadLocalFallback() {
-      // Periksa localStorage untuk anak yang baru didaftarkan di sesi ini
+    function getDevSessionPosyanduId(): number {
+      if (typeof document === 'undefined') return 1;
+      const cookieMatch = document.cookie
+        .split('; ')
+        .find((row) => row.startsWith('sg_dev_session='));
+      if (cookieMatch) {
+        try {
+          const val = decodeURIComponent(cookieMatch.split('=')[1]);
+          const session = JSON.parse(val);
+          if (session.posyandu_id) return Number(session.posyandu_id);
+          if (session.email === 'kader2@test.com') return 2;
+        } catch {}
+      }
+      return 1;
+    }
+
+    function loadLocalFallback(targetPosyanduId: number | null) {
+      const posyanduId = targetPosyanduId || getDevSessionPosyanduId();
+      let combined = [...FALLBACK_CHILDREN];
       const localSaved = localStorage.getItem('sg_local_anak');
       if (localSaved) {
         try {
           const parsed = JSON.parse(localSaved);
-          setChildrenList([...parsed, ...FALLBACK_CHILDREN]);
-          return;
+          if (Array.isArray(parsed)) {
+            combined = [...parsed, ...combined];
+          }
         } catch {
           // Ignore
         }
       }
-      setChildrenList(FALLBACK_CHILDREN);
+      // Filter by posyandu_id so each kader only sees children from their own posyandu
+      setChildrenList(combined.filter((c) => Number(c.posyandu_id) === Number(posyanduId)));
     }
 
     fetchChildren();

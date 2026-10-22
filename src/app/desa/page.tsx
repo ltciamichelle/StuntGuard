@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { Card, Button, StatusBadge } from '@/components/ui';
+import { StatusBadge } from '@/components/ui';
 import { SyncStatusBadge } from '@/components/SyncStatusBadge';
 import { calculateAgeInMonths, formatIndonesianDate } from '@/lib/utils';
 import {
@@ -11,8 +11,6 @@ import {
   Pengukuran,
   TindakLanjut,
   Posyandu,
-  Desa,
-  StatusGizi,
   StatusRujukan,
 } from '@/types/database';
 import {
@@ -24,13 +22,9 @@ import {
   CheckCircle2,
   Calendar,
   Filter,
-  Users,
   Clock,
-  ChevronDown,
   PieChart,
   ShieldAlert,
-  HelpCircle,
-  FileSpreadsheet,
 } from 'lucide-react';
 
 interface ChildWithLatestMeasurement {

@@ -13,10 +13,8 @@ import {
   AlertTriangle,
   AlertOctagon,
   HelpCircle,
-  TrendingUp,
   Scale,
   Ruler,
-  Calendar,
   FileText,
   Utensils,
   LineChart,
@@ -241,7 +239,7 @@ export default function MeasurementResultPage() {
                 fullWidth
                 id="btn-selesai-neutral"
                 onClick={handleSimpanDanSelesai}
-                className="min-h-[52px] text-[15px] font-bold"
+                className="min-h-[56px] text-[15px] font-bold"
               >
                 Simpan dan selesai
               </Button>
@@ -271,14 +269,14 @@ export default function MeasurementResultPage() {
             </div>
 
             {/* Buttons: White button "Buat surat rujukan" + "Simpan dan selesai" */}
-            <div className="space-y-2 pt-1">
+            <div className="space-y-3 pt-1">
               <Button
                 variant="alert-white"
                 fullWidth
                 id="btn-buat-surat-rujukan"
                 icon={<FileText size={18} />}
                 onClick={() => router.push(`/kader/rujukan/${pengukuran.id}`)}
-                className="min-h-[54px] text-[16px] font-bold shadow-md"
+                className="min-h-[56px] text-[16px] font-bold shadow-md"
               >
                 Buat surat rujukan
               </Button>
@@ -287,7 +285,7 @@ export default function MeasurementResultPage() {
                 type="button"
                 id="btn-simpan-selesai-merah"
                 onClick={handleSimpanDanSelesai}
-                className="w-full py-3 rounded-full text-white/90 hover:text-white font-bold text-[14px] hover:bg-white/10 active:bg-white/20 transition-all cursor-pointer"
+                className="w-full min-h-[56px] flex items-center justify-center rounded-full text-white/90 hover:text-white font-bold text-[15px] hover:bg-white/10 active:bg-white/20 transition-all cursor-pointer border border-white/30"
               >
                 Simpan dan selesai
               </button>
@@ -317,14 +315,14 @@ export default function MeasurementResultPage() {
             </div>
 
             {/* Buttons: "Lihat saran gizi", "Simpan dan selesai" */}
-            <div className="space-y-2 pt-1">
+            <div className="space-y-3 pt-1">
               <Button
                 variant="primary"
                 fullWidth
                 id="btn-lihat-saran-gizi"
                 icon={<Utensils size={18} />}
                 onClick={() => router.push(`/kader/saran-gizi?pengukuranId=${pengukuran.id}`)}
-                className="min-h-[54px] text-[16px] font-bold shadow-md"
+                className="min-h-[56px] text-[16px] font-bold shadow-md"
               >
                 Lihat saran gizi
               </Button>
@@ -334,7 +332,7 @@ export default function MeasurementResultPage() {
                 fullWidth
                 id="btn-simpan-selesai-kuning"
                 onClick={handleSimpanDanSelesai}
-                className="min-h-[50px] text-[15px] font-bold"
+                className="min-h-[56px] text-[15px] font-bold"
               >
                 Simpan dan selesai
               </Button>
@@ -370,7 +368,7 @@ export default function MeasurementResultPage() {
                 fullWidth
                 id="btn-simpan-selesai-hijau"
                 onClick={handleSimpanDanSelesai}
-                className="min-h-[54px] text-[16px] font-bold shadow-md"
+                className="min-h-[56px] text-[16px] font-bold shadow-md"
               >
                 Simpan dan selesai
               </Button>

@@ -11,7 +11,6 @@ import {
   isOutsideSanityLimits,
   isWithinDatabaseLimits,
   calculateZScores,
-  SANITY_LIMITS,
   DATABASE_LIMITS,
 } from '@/lib/anthropometry';
 import {
@@ -23,7 +22,6 @@ import {
   CheckCircle2,
   Delete,
   Radio,
-  Sparkles,
   HelpCircle,
 } from 'lucide-react';
 
@@ -207,68 +205,150 @@ export default function MeasurementPage() {
       const heightNum = height;
       const today = new Date().toISOString().split('T')[0];
 
-      // Calculate offline Z-Scores and Status as fallback / preview
-      const anthropometrics = calculateZScores(
-        ageInMonths,
-        child.jenis_kelamin,
-        heightNum,
-        weightNum
-      );
-
-      const payload: Pengukuran = {
-        id: newMeasurementId,
-        anak_id: child.id,
-        desa_id: child.desa_id || 1,
-        posyandu_id: child.posyandu_id || 1,
-        tgl_ukur: today,
-        berat_kg: weightNum,
-        tinggi_cm: heightNum,
-        cara_ukur: method,
-        berat_manual: true,
-        z_tbu: anthropometrics.z_tbu,
-        z_bbu: anthropometrics.z_bbu,
-        status: anthropometrics.status,
-      };
-
       const isRealSupabase =
         process.env.NEXT_PUBLIC_SUPABASE_URL &&
         !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project') &&
         !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
 
-      let savedId = newMeasurementId;
+      let savedRow: Pengukuran;
 
       if (isRealSupabase) {
+        // Rule: z_tbu, z_bbu, and status are NEVER calculated in frontend or sent to Supabase.
+        // Database triggers compute anthropometrics on the server.
+        const dbPayload = {
+          id: newMeasurementId,
+          anak_id: child.id,
+          desa_id: child.desa_id || 1,
+          posyandu_id: child.posyandu_id || 1,
+          tgl_ukur: today,
+          berat_kg: weightNum,
+          tinggi_cm: heightNum,
+          cara_ukur: method,
+          berat_manual: true,
+        };
+
         // Upsert into pengukuran with ignoreDuplicates
         const { error: upsertError } = await supabase
           .from('pengukuran')
-          .upsert(payload, { ignoreDuplicates: true });
+          .upsert(dbPayload, { ignoreDuplicates: true });
 
         if (upsertError) {
           throw new Error(upsertError.message || 'Gagal menyimpan ke database');
         }
 
         // Read the saved row back
-        const { data: savedRow, error: fetchSavedError } = await supabase
+        const { data: fetchedRow, error: fetchSavedError } = await supabase
           .from('pengukuran')
           .select('*')
           .eq('id', newMeasurementId)
           .single();
 
-        if (fetchSavedError || !savedRow) {
+        if (fetchSavedError || !fetchedRow) {
           throw new Error('Gagal membaca ulang data pengukuran');
         }
 
-        savedId = savedRow.id;
+        savedRow = fetchedRow;
+
+        // Auto create follow-up if status is merah or kuning
+        if (savedRow.status === 'merah' || savedRow.status === 'kuning') {
+          await supabase.from('tindak_lanjut').upsert(
+            {
+              pengukuran_id: savedRow.id,
+              anak_id: child.id,
+              desa_id: child.desa_id || 1,
+              posyandu_id: child.posyandu_id || 1,
+              tgl_kunjungan_ulang: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
+              status_rujukan: 'belum',
+              catatan:
+                savedRow.status === 'merah'
+                  ? 'Indikasi stunting: Segera rujuk ke Puskesmas'
+                  : 'Rekomendasikan asupan telur atau protein hewani',
+              selesai: false,
+            },
+            { ignoreDuplicates: true }
+          );
+        }
 
         // Also cache locally for offline access
         saveToLocalStorage(savedRow);
       } else {
-        // Fallback local persistence
-        saveToLocalStorage(payload);
+        // Fallback local persistence (offline demo mode)
+        // Check previous measurement for weight stagnation (2T rule)
+        let isWeightStagnant = false;
+        try {
+          const existingHistory = localStorage.getItem('sg_local_pengukuran');
+          if (existingHistory) {
+            const list: Pengukuran[] = JSON.parse(existingHistory);
+            const prevs = list.filter((p) => p.anak_id === child.id);
+            if (prevs.length > 0) {
+              const latestPrev = prevs[0];
+              if (weightNum <= latestPrev.berat_kg) {
+                isWeightStagnant = true;
+              }
+            }
+          }
+        } catch {}
+
+        // Calculate offline Z-Scores and Status for demo
+        const anthropometrics = calculateZScores(
+          ageInMonths,
+          child.jenis_kelamin,
+          heightNum,
+          weightNum
+        );
+
+        let finalStatus = anthropometrics.status;
+        if (isWeightStagnant && finalStatus === 'hijau') {
+          finalStatus = 'kuning';
+        }
+
+        savedRow = {
+          id: newMeasurementId,
+          anak_id: child.id,
+          desa_id: child.desa_id || 1,
+          posyandu_id: child.posyandu_id || 1,
+          tgl_ukur: today,
+          berat_kg: weightNum,
+          tinggi_cm: heightNum,
+          cara_ukur: method,
+          berat_manual: true,
+          z_tbu: anthropometrics.z_tbu,
+          z_bbu: anthropometrics.z_bbu,
+          status: finalStatus,
+        };
+
+        saveToLocalStorage(savedRow);
+
+        // If merah or kuning, create local follow-up in sg_local_tindak_lanjut
+        if (savedRow.status === 'merah' || savedRow.status === 'kuning') {
+          try {
+            const rawTl = localStorage.getItem('sg_local_tindak_lanjut');
+            const tlList = rawTl ? JSON.parse(rawTl) : [];
+            const newTl = {
+              id: Date.now(),
+              pengukuran_id: savedRow.id,
+              anak_id: child.id,
+              desa_id: child.desa_id || 1,
+              posyandu_id: child.posyandu_id || 1,
+              tgl_kunjungan_ulang: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
+              status_rujukan: 'belum',
+              catatan:
+                savedRow.status === 'merah'
+                  ? 'Indikasi stunting: Segera rujuk ke Puskesmas'
+                  : 'Rekomendasikan asupan telur atau protein hewani',
+              selesai: false,
+              updated_at: new Date().toISOString(),
+              anak: child,
+              pengukuran: savedRow,
+            };
+            tlList.unshift(newTl);
+            localStorage.setItem('sg_local_tindak_lanjut', JSON.stringify(tlList));
+          } catch {}
+        }
       }
 
       // Navigate to the result screen with its id
-      router.push(`/kader/hasil/${savedId}`);
+      router.push(`/kader/hasil/${savedRow.id}`);
     } catch (err: any) {
       console.error('Error saving measurement:', err);
       // Requirement: show "Data belum tersimpan. Coba lagi." and keep the entered numbers
@@ -746,13 +826,13 @@ export default function MeasurementPage() {
             )}
 
             {/* Action Buttons */}
-            <div className="flex flex-col gap-2 pt-1">
+            <div className="flex flex-col gap-3 pt-1">
               {/* Button 1: Ukur ulang */}
               <Button
                 variant="secondary"
                 id="btn-sanity-ukur-ulang"
                 onClick={() => setShowSanityModal(false)}
-                className="w-full text-slate-800 font-bold min-h-[50px]"
+                className="w-full text-slate-800 font-bold min-h-[56px]"
               >
                 Ukur Ulang
               </Button>
@@ -763,7 +843,7 @@ export default function MeasurementPage() {
                 id="btn-sanity-sudah-benar"
                 disabled={!isAllowedInDatabase || isSaving}
                 onClick={executeSave}
-                className="w-full min-h-[50px] px-6 rounded-full font-bold text-[15px] inline-flex items-center justify-center gap-2 transition-all bg-berry hover:bg-berry-hover text-white shadow-md active:bg-berry-dark disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
+                className="w-full min-h-[56px] px-6 rounded-full font-bold text-[15px] inline-flex items-center justify-center gap-2 transition-all bg-berry hover:bg-berry-hover text-white shadow-md active:bg-berry-dark disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
               >
                 {isSaving ? (
                   <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

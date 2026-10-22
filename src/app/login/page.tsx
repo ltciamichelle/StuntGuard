@@ -83,6 +83,7 @@ export default function LoginPage() {
 
         const testAccount = TEST_PROFILES[cleanEmail];
         if (testAccount) {
+          const posyanduId = cleanEmail === 'kader2@test.com' ? 2 : 1;
           // Set dev session cookie
           const sessionPayload = {
             id: `dev-${cleanEmail}`,
@@ -90,6 +91,8 @@ export default function LoginPage() {
             role: testAccount.role,
             nama: testAccount.nama,
             posyandu_nama: testAccount.posyandu,
+            posyandu_id: posyanduId,
+            desa_id: 1,
           };
           document.cookie = `sg_dev_session=${encodeURIComponent(JSON.stringify(sessionPayload))}; path=/; max-age=86400; SameSite=Lax`;
 

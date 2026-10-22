@@ -3,7 +3,7 @@
 import React, { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, Button } from '@/components/ui';
-import { ArrowLeft, Egg, Fish, Utensils, Heart, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Egg, Fish, Utensils, Heart } from 'lucide-react';
 
 function SaranGiziContent() {
   const router = useRouter();
