@@ -51,11 +51,39 @@ export async function middleware(request: NextRequest) {
         },
       });
 
-      const { data } = await supabase.auth.getUser();
+      const { data, error } = await supabase.auth.getUser();
       user = data.user;
+
+      // Rule: Do not log the user out when a token refresh fails while offline.
+      if (!user) {
+        const hasSessionCookie = request.cookies
+          .getAll()
+          .some(
+            (c) =>
+              c.name.includes('-auth-token') ||
+              c.name.includes('supabase-auth') ||
+              c.name === 'sg_dev_session'
+          );
+        if (hasSessionCookie) {
+          // Allow the offline PWA shell and cached pages to load without kicking to login
+          user = { id: 'offline-cached-user', role: 'kader' };
+        }
+      }
     } catch {
-      // In case of network/config error, treat as not logged in
-      user = null;
+      // In case of network error, check if auth cookies exist to preserve offline session
+      const hasSessionCookie = request.cookies
+        .getAll()
+        .some(
+          (c) =>
+            c.name.includes('-auth-token') ||
+            c.name.includes('supabase-auth') ||
+            c.name === 'sg_dev_session'
+        );
+      if (hasSessionCookie) {
+        user = { id: 'offline-cached-user', role: 'kader' };
+      } else {
+        user = null;
+      }
     }
   } else {
     // Development fallback check when using mock/test session cookie

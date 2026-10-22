@@ -12,6 +12,16 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: 'StuntGuard — Deteksi Dini Stunting Posyandu',
   description: 'Aplikasi pencatatan tumbuh kembang balita dan deteksi dini stunting untuk kader Posyandu Indonesia.',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'StuntGuard',
+  },
+  icons: {
+    icon: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
 };
 
 export const viewport: Viewport = {
@@ -22,6 +32,8 @@ export const viewport: Viewport = {
   themeColor: '#A72449',
 };
 
+import { PwaRegister } from '@/components/PwaRegister';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -29,7 +41,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id" className={plusJakartaSans.variable}>
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#A72449" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+      </head>
       <body className="min-h-screen bg-pageBg font-sans text-slate-800 antialiased flex flex-col items-center">
+        <PwaRegister />
         {/* Root container: allows desktop dashboards (like /desa up to 1280px) and mobile frames */}
         <div className="w-full min-h-screen flex flex-col items-center bg-pageBg">
           {children}

@@ -15,8 +15,11 @@ import {
   AlertCircle,
   ExternalLink,
   ShieldCheck,
-  Check
+  Check,
 } from 'lucide-react';
+import { db } from '@/lib/db';
+import { syncEngine } from '@/lib/syncEngine';
+import { Anak } from '@/types/database';
 
 export default function RegisterChildPage() {
   const router = useRouter();
@@ -103,141 +106,82 @@ export default function RegisterChildPage() {
     setLoading(true);
 
     try {
-      const isRealSupabase =
-        process.env.NEXT_PUBLIC_SUPABASE_URL &&
-        !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project') &&
-        !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
+      const newAnakId = crypto.randomUUID();
 
-      if (isRealSupabase) {
-        // Ambil desa_id dan posyandu_id dari profil user kader yang sedang login (RULE 4)
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          router.push('/login');
-          return;
+      // Retrieve desa_id & posyandu_id from profile cache or dev session
+      let desaId = 1;
+      let posyanduId = 1;
+
+      try {
+        const cachedProfile = await db.profile_cache.toCollection().first();
+        if (cachedProfile) {
+          if (cachedProfile.desa_id) desaId = cachedProfile.desa_id;
+          if (cachedProfile.posyandu_id) posyanduId = cachedProfile.posyandu_id;
         }
+      } catch {}
 
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('desa_id, posyandu_id')
-          .eq('id', user.id)
-          .single();
-
-        const desaId = profile?.desa_id;
-        const posyanduId = profile?.posyandu_id;
-
-        // Cek duplikasi NIK sebelum insert jika NIK diisi
-        if (cleanNik) {
-          const { data: existingChild } = await supabase
-            .from('anak')
-            .select('id, nama')
-            .eq('nik', cleanNik)
-            .maybeSingle();
-
-          if (existingChild) {
-            setNikError('NIK sudah terdaftar');
-            setDuplicateChildId(existingChild.id);
-            setLoading(false);
-            return;
-          }
-        }
-
-        // Siapkan payload anak. RULE 5: nik send null when empty, never an empty string.
-        const anakPayload = {
-          desa_id: desaId,
-          posyandu_id: posyanduId,
-          nama: nama.trim(),
-          nik: cleanNik ? cleanNik : null,
-          no_kk: noKk.trim() ? noKk.trim() : null,
-          nama_ibu: namaIbu.trim(),
-          tgl_lahir: tglLahir,
-          jenis_kelamin: jenisKelamin,
-        };
-
-        const { data: newAnak, error: insertAnakError } = await supabase
-          .from('anak')
-          .insert(anakPayload)
-          .select()
-          .single();
-
-        if (insertAnakError) {
-          // Tangani kemungkinan unique constraint error dari database
-          if (insertAnakError.code === '23505' || insertAnakError.message?.toLowerCase().includes('duplicate') || insertAnakError.message?.toLowerCase().includes('unique')) {
-            setNikError('NIK sudah terdaftar');
-            // Coba ambil ID anak yang sudah ada untuk tombol buka
-            if (cleanNik) {
-              const { data: dup } = await supabase.from('anak').select('id').eq('nik', cleanNik).maybeSingle();
-              if (dup) setDuplicateChildId(dup.id);
-            }
-          } else {
-            setGeneralError(`Gagal menyimpan data: ${insertAnakError.message}`);
-          }
-          setLoading(false);
-          return;
-        }
-
-        // Simpan baris consent (versi_teks = 'v1')
-        if (newAnak?.id) {
-          const { error: consentError } = await supabase
-            .from('consent')
-            .insert({
-              anak_id: newAnak.id,
-              diberikan_oleh: consentPerson,
-              versi_teks: 'v1',
-            });
-
-          if (consentError) {
-            console.error('Consent insert warning:', consentError);
-          }
-
-          // Setelah berhasil, arahkan ke layar ukur balita ini
-          router.push(`/kader/ukur/${newAnak.id}`);
-          return;
-        }
-      } else {
-        // Fallback simpan lokal saat Supabase belum terkonfigurasi
-        const localSaved = localStorage.getItem('sg_local_anak');
-        let currentList: any[] = localSaved ? JSON.parse(localSaved) : [];
-
-        if (cleanNik && currentList.some((c: any) => c.nik === cleanNik)) {
-          const dup = currentList.find((c: any) => c.nik === cleanNik);
-          setNikError('NIK sudah terdaftar');
-          setDuplicateChildId(dup?.id || 'demo-dup');
-          setLoading(false);
-          return;
-        }
-
-        let currentPosyanduId = 1;
-        const cookieMatch = typeof document !== 'undefined'
-          ? document.cookie.split('; ').find((row) => row.startsWith('sg_dev_session='))
-          : null;
+      if (posyanduId === 1 && typeof document !== 'undefined') {
+        const cookieMatch = document.cookie
+          .split('; ')
+          .find((row) => row.startsWith('sg_dev_session='));
         if (cookieMatch) {
           try {
             const val = decodeURIComponent(cookieMatch.split('=')[1]);
             const session = JSON.parse(val);
-            if (session.posyandu_id) currentPosyanduId = Number(session.posyandu_id);
+            if (session.posyandu_id) posyanduId = Number(session.posyandu_id);
+            if (session.desa_id) desaId = Number(session.desa_id);
           } catch {}
         }
-
-        const generatedId = crypto.randomUUID();
-        const localChild = {
-          id: generatedId,
-          desa_id: 1,
-          posyandu_id: currentPosyanduId,
-          nama: nama.trim(),
-          nik: cleanNik ? cleanNik : null,
-          no_kk: noKk.trim() ? noKk.trim() : null,
-          nama_ibu: namaIbu.trim(),
-          tgl_lahir: tglLahir,
-          jenis_kelamin: jenisKelamin,
-        };
-
-        currentList.unshift(localChild);
-        localStorage.setItem('sg_local_anak', JSON.stringify(currentList));
-
-        // Redirect ke layar ukur balita ini
-        router.push(`/kader/ukur/${generatedId}`);
-        return;
       }
+
+      // Check local NIK duplicate before saving
+      if (cleanNik) {
+        const existingLocal = await db.anak_cache.where('nik').equals(cleanNik).first();
+        if (existingLocal) {
+          setNikError('NIK sudah terdaftar');
+          setDuplicateChildId(existingLocal.id);
+          setLoading(false);
+          return;
+        }
+      }
+
+      const newChild: Anak = {
+        id: newAnakId,
+        desa_id: desaId,
+        posyandu_id: posyanduId,
+        nama: nama.trim(),
+        nik: cleanNik ? cleanNik : null,
+        no_kk: noKk.trim() ? noKk.trim() : null,
+        nama_ibu: namaIbu.trim(),
+        tgl_lahir: tglLahir,
+        jenis_kelamin: jenisKelamin,
+      };
+
+      const consentRow = {
+        id: Date.now(),
+        anak_id: newAnakId,
+        diberikan_oleh: consentPerson,
+        versi_teks: 'v1',
+      };
+
+      // Rule 3: Every write is saved to outbox first, then shown in the UI immediately.
+      await db.anak_cache.put(newChild);
+
+      // Enqueue: anak first, then consent
+      await syncEngine.enqueue('anak', newChild);
+      await syncEngine.enqueue('consent', consentRow);
+
+      // Also maintain legacy fallback localStorage if accessed by older views
+      try {
+        const rawSaved = localStorage.getItem('sg_local_anak');
+        const list = rawSaved ? JSON.parse(rawSaved) : [];
+        list.unshift(newChild);
+        localStorage.setItem('sg_local_anak', JSON.stringify(list));
+      } catch {}
+
+      // Navigate immediately to measurement screen for this new child
+      router.push(`/kader/ukur/${newAnakId}`);
+      return;
     } catch (err: any) {
       setGeneralError('Terjadi kesalahan teknis saat menyimpan data.');
     } finally {

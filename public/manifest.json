@@ -1,0 +1,19 @@
+{
+  "name": "StuntGuard",
+  "short_name": "StuntGuard",
+  "description": "Deteksi Dini Stunting Posyandu Desa",
+  "start_url": "/kader",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F4F6F8",
+  "theme_color": "#A72449",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192 512x512 any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

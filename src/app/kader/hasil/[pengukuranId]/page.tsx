@@ -18,7 +18,9 @@ import {
   FileText,
   Utensils,
   LineChart,
+  Clock,
 } from 'lucide-react';
+import { db, CachedPengukuran } from '@/lib/db';
 
 export default function MeasurementResultPage() {
   const params = useParams();
@@ -26,7 +28,7 @@ export default function MeasurementResultPage() {
   const pengukuranId = (params.pengukuranId || params.id) as string;
   const supabase = createClient();
 
-  const [pengukuran, setPengukuran] = useState<Pengukuran | null>(null);
+  const [pengukuran, setPengukuran] = useState<CachedPengukuran | null>(null);
   const [child, setChild] = useState<Anak | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -34,15 +36,28 @@ export default function MeasurementResultPage() {
     async function fetchResultData() {
       setLoading(true);
       try {
+        let foundPengukuran: CachedPengukuran | null = null;
+        let foundChild: Anak | null = null;
+
+        // 1. Read from Dexie local IndexedDB first
+        try {
+          const cachedP = await db.pengukuran_cache.get(pengukuranId);
+          if (cachedP) {
+            foundPengukuran = cachedP;
+            const cachedC = await db.anak_cache.get(cachedP.anak_id);
+            if (cachedC) foundChild = cachedC;
+          }
+        } catch (dbErr) {
+          console.warn('Error reading from IndexedDB:', dbErr);
+        }
+
+        // 2. If online and Supabase configured, check server for server-trigger-computed row
         const isRealSupabase =
           process.env.NEXT_PUBLIC_SUPABASE_URL &&
           !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project') &&
           !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
 
-        let foundPengukuran: Pengukuran | null = null;
-        let foundChild: Anak | null = null;
-
-        if (isRealSupabase) {
+        if (isRealSupabase && navigator.onLine) {
           const { data: pData } = await supabase
             .from('pengukuran')
             .select('*')
@@ -50,7 +65,9 @@ export default function MeasurementResultPage() {
             .single();
 
           if (pData) {
-            foundPengukuran = pData;
+            const freshPeng: CachedPengukuran = { ...pData, is_offline: false };
+            foundPengukuran = freshPeng;
+            await db.pengukuran_cache.put(freshPeng);
 
             // Fetch child
             const { data: cData } = await supabase
@@ -59,15 +76,18 @@ export default function MeasurementResultPage() {
               .eq('id', pData.anak_id)
               .single();
 
-            if (cData) foundChild = cData;
+            if (cData) {
+              foundChild = cData;
+              await db.anak_cache.put(cData);
+            }
           }
         }
 
-        // Check local storage if not found in database
+        // 3. Fallback to localStorage if still not found
         if (!foundPengukuran) {
           const localPengukuran = localStorage.getItem('sg_local_pengukuran');
           if (localPengukuran) {
-            const list: Pengukuran[] = JSON.parse(localPengukuran);
+            const list: CachedPengukuran[] = JSON.parse(localPengukuran);
             const p = list.find((item) => item.id === pengukuranId);
             if (p) foundPengukuran = p;
           }
@@ -82,7 +102,7 @@ export default function MeasurementResultPage() {
           }
         }
 
-        // Demo fallback if testing freshly
+        // Demo fallback
         if (!foundPengukuran) {
           foundPengukuran = {
             id: pengukuranId || 'demo-pengukuran',
@@ -94,9 +114,10 @@ export default function MeasurementResultPage() {
             tinggi_cm: 75.0,
             cara_ukur: 'berbaring',
             berat_manual: true,
-            z_tbu: -0.29,
-            z_bbu: 0.2,
-            status: 'hijau',
+            z_tbu: null,
+            z_bbu: null,
+            status: null,
+            is_offline: true,
           };
         }
 
@@ -152,15 +173,25 @@ export default function MeasurementResultPage() {
 
   const ageInMonths = calculateAgeInMonths(child.tgl_lahir);
 
+  // Rule 6: When a measurement is saved offline, show a neutral card:
+  // "Data tersimpan di HP. Hasil warna muncul setelah data terkirim." with a pending icon. No green, yellow, or red.
+  const isOfflineSaved = Boolean(
+    pengukuran.is_offline ||
+    pengukuran.status === null ||
+    pengukuran.status === undefined
+  );
+
   // Check if Z-score is null / missing reference data
   const hasMissingReference =
-    pengukuran.z_tbu === null ||
+    !isOfflineSaved &&
+    (pengukuran.z_tbu === null ||
     pengukuran.z_tbu === undefined ||
     pengukuran.z_bbu === null ||
-    pengukuran.z_bbu === undefined;
+    pengukuran.z_bbu === undefined);
 
   // Plain Indonesian short explanations for Z-scores
   const getTbuExplanation = (val: number | null | undefined): string => {
+    if (isOfflineSaved) return 'Menunggu kalkulasi server saat online.';
     if (val === null || val === undefined) return 'Data referensi belum tersedia.';
     if (val < -3) return 'Tinggi badan jauh di bawah rata-rata (sangat pendek).';
     if (val < -2) return 'Tinggi badan di bawah rata-rata usianya (pendek).';
@@ -169,6 +200,7 @@ export default function MeasurementResultPage() {
   };
 
   const getBbuExplanation = (val: number | null | undefined): string => {
+    if (isOfflineSaved) return 'Menunggu kalkulasi server saat online.';
     if (val === null || val === undefined) return 'Data referensi belum tersedia.';
     if (val < -3) return 'Berat badan sangat kurang untuk usianya.';
     if (val < -2) return 'Berat badan kurang untuk usianya (waspada).';
@@ -212,8 +244,40 @@ export default function MeasurementResultPage() {
           <SyncStatusBadge />
         </header>
 
-        {/* 1. Big Alert Card by Status (or Neutral if missing reference) */}
-        {hasMissingReference ? (
+        {/* 1. Big Alert Card: Offline Neutral vs Missing Reference vs Color Status Cards */}
+        {isOfflineSaved ? (
+          /* Neutral Card (Rule 6): "Data tersimpan di HP. Hasil warna muncul setelah data terkirim." */
+          <div
+            id="alert-card-offline"
+            className="p-5 rounded-3xl bg-slate-100 border-2 border-slate-300 text-slate-800 space-y-3 shadow-soft"
+          >
+            <div className="flex items-start gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-700 flex-shrink-0">
+                <Clock size={24} />
+              </div>
+              <div>
+                <h2 className="text-[17px] font-extrabold text-slate-900 leading-snug">
+                  Data tersimpan di HP. Hasil warna muncul setelah data terkirim.
+                </h2>
+                <p className="text-[13px] text-slate-600 mt-1 leading-relaxed">
+                  Hasil warna dan Z-score dihitung otomatis oleh server setelah data berhasil disinkronkan saat ponsel tersambung sinyal.
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <Button
+                variant="secondary"
+                fullWidth
+                id="btn-selesai-offline"
+                onClick={handleSimpanDanSelesai}
+                className="min-h-[56px] text-[15px] font-bold"
+              >
+                Simpan dan selesai
+              </Button>
+            </div>
+          </div>
+        ) : hasMissingReference ? (
           /* Neutral Card: "Hasil belum bisa dihitung. Periksa usia anak." Do not show a color status. */
           <div
             id="alert-card-neutral"
@@ -448,7 +512,7 @@ export default function MeasurementResultPage() {
                   id="zscore-tbu-val"
                   className="text-[32px] font-black text-slate-900 tracking-tight leading-none"
                 >
-                  {pengukuran.z_tbu !== null && pengukuran.z_tbu !== undefined
+                  {pengukuran.z_tbu !== null && pengukuran.z_tbu !== undefined && !isOfflineSaved
                     ? `${pengukuran.z_tbu > 0 ? '+' : ''}${pengukuran.z_tbu}`
                     : '-'}
                 </span>
@@ -478,7 +542,7 @@ export default function MeasurementResultPage() {
                   id="zscore-bbu-val"
                   className="text-[32px] font-black text-slate-900 tracking-tight leading-none"
                 >
-                  {pengukuran.z_bbu !== null && pengukuran.z_bbu !== undefined
+                  {pengukuran.z_bbu !== null && pengukuran.z_bbu !== undefined && !isOfflineSaved
                     ? `${pengukuran.z_bbu > 0 ? '+' : ''}${pengukuran.z_bbu}`
                     : '-'}
                 </span>

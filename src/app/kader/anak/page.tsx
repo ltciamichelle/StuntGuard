@@ -77,6 +77,9 @@ const FALLBACK_CHILDREN: Anak[] = [
   },
 ];
 
+import { db } from '@/lib/db';
+import { syncEngine } from '@/lib/syncEngine';
+
 export default function ChildListPage() {
   const router = useRouter();
   const [childrenList, setChildrenList] = useState<Anak[]>([]);
@@ -91,15 +94,47 @@ export default function ChildListPage() {
       setLoading(true);
       setErrorMsg('');
 
-      let userPosyanduId: number | null = null;
+      // 1. Determine user posyandu_id from cache, session, or online profile
+      let userPosyanduId: number = getDevSessionPosyanduId();
+      try {
+        const cachedProfile = await db.profile_cache.toCollection().first();
+        if (cachedProfile?.posyandu_id) {
+          userPosyanduId = cachedProfile.posyandu_id;
+        }
+      } catch {}
 
+      // 2. Read immediately from local IndexedDB (Dexie anak_cache)
+      try {
+        const localCached = await db.anak_cache.toArray();
+        if (localCached.length > 0) {
+          const filtered = localCached.filter(
+            (c) => Number(c.posyandu_id) === Number(userPosyanduId)
+          );
+          if (filtered.length > 0) {
+            setChildrenList(filtered.sort((a, b) => a.nama.localeCompare(b.nama)));
+            setLoading(false);
+          }
+        } else {
+          // Pre-populate Dexie anak_cache with seeded fallback children
+          await db.anak_cache.bulkPut(FALLBACK_CHILDREN);
+          const filtered = FALLBACK_CHILDREN.filter(
+            (c) => Number(c.posyandu_id) === Number(userPosyanduId)
+          );
+          setChildrenList(filtered.sort((a, b) => a.nama.localeCompare(b.nama)));
+          setLoading(false);
+        }
+      } catch (dbErr) {
+        console.warn('Error reading anak_cache:', dbErr);
+      }
+
+      // 3. Whenever online, refresh from server
       try {
         const isRealSupabase =
           process.env.NEXT_PUBLIC_SUPABASE_URL &&
           !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project') &&
           !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
 
-        if (isRealSupabase) {
+        if (isRealSupabase && navigator.onLine) {
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
             const { data: profile } = await supabase
@@ -124,18 +159,15 @@ export default function ChildListPage() {
           const { data, error } = await query;
 
           if (error) {
-            console.error('Error fetching anak:', error);
-            setErrorMsg('Gagal memuat data balita dari server.');
-            loadLocalFallback(userPosyanduId);
-          } else if (data) {
+            console.warn('Error fetching fresh anak from server:', error);
+          } else if (data && data.length > 0) {
+            // Refresh local Dexie cache
+            await db.anak_cache.bulkPut(data);
             setChildrenList(data);
           }
-        } else {
-          loadLocalFallback(getDevSessionPosyanduId());
         }
       } catch (err) {
-        console.error(err);
-        loadLocalFallback(getDevSessionPosyanduId());
+        console.warn('Network fetch error (running offline):', err);
       } finally {
         setLoading(false);
       }
@@ -155,24 +187,6 @@ export default function ChildListPage() {
         } catch {}
       }
       return 1;
-    }
-
-    function loadLocalFallback(targetPosyanduId: number | null) {
-      const posyanduId = targetPosyanduId || getDevSessionPosyanduId();
-      let combined = [...FALLBACK_CHILDREN];
-      const localSaved = localStorage.getItem('sg_local_anak');
-      if (localSaved) {
-        try {
-          const parsed = JSON.parse(localSaved);
-          if (Array.isArray(parsed)) {
-            combined = [...parsed, ...combined];
-          }
-        } catch {
-          // Ignore
-        }
-      }
-      // Filter by posyandu_id so each kader only sees children from their own posyandu
-      setChildrenList(combined.filter((c) => Number(c.posyandu_id) === Number(posyanduId)));
     }
 
     fetchChildren();

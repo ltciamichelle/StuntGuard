@@ -19,6 +19,9 @@ import {
   AlertCircle,
 } from 'lucide-react';
 
+import { db, CachedTindakLanjut } from '@/lib/db';
+import { syncEngine } from '@/lib/syncEngine';
+
 export interface TindakLanjutItem extends TindakLanjut {
   anak?: Anak;
   pengukuran?: Pengukuran;
@@ -50,6 +53,17 @@ export default function TindakLanjutPage() {
   async function loadTindakLanjutData() {
     setLoading(true);
     try {
+      // 1. Read from Dexie tindak_lanjut_cache first (offline support)
+      try {
+        const cached = await db.tindak_lanjut_cache.toArray();
+        if (cached.length > 0) {
+          setItems(cached);
+          setLoading(false);
+        }
+      } catch (dbErr) {
+        console.warn('Error reading from tindak_lanjut_cache:', dbErr);
+      }
+
       const isRealSupabase =
         process.env.NEXT_PUBLIC_SUPABASE_URL &&
         !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project') &&
@@ -57,7 +71,7 @@ export default function TindakLanjutPage() {
 
       let loadedItems: TindakLanjutItem[] = [];
 
-      if (isRealSupabase) {
+      if (isRealSupabase && navigator.onLine) {
         // Query joined data
         const { data, error } = await supabase
           .from('tindak_lanjut')
@@ -70,6 +84,7 @@ export default function TindakLanjutPage() {
 
         if (data && data.length > 0) {
           loadedItems = data as TindakLanjutItem[];
+          await db.tindak_lanjut_cache.bulkPut(loadedItems as CachedTindakLanjut[]);
         }
       }
 
@@ -250,32 +265,29 @@ export default function TindakLanjutPage() {
         !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project') &&
         !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
 
-      if (isRealSupabase) {
-        const { error } = await supabase
-          .from('tindak_lanjut')
-          .update({
-            status_rujukan: editStatusRujukan,
-            catatan: editCatatan.trim() || null,
-            selesai: editSelesai,
-            updated_at: nowIso,
-          })
-          .eq('id', editingItem.id);
+      const updatedItem: TindakLanjutItem = {
+        ...editingItem,
+        status_rujukan: editStatusRujukan,
+        catatan: editCatatan.trim() || null,
+        selesai: editSelesai,
+        updated_at: nowIso,
+      };
 
-        if (error) {
-          console.warn('Supabase update warning, falling back to local update:', error);
-        }
-      }
+      // 1. Update Dexie local cache immediately
+      await db.tindak_lanjut_cache.put(updatedItem as CachedTindakLanjut);
 
-      // Update state & localStorage
+      // 2. Enqueue into Outbox (Rule 3)
+      await syncEngine.enqueue('tindak_lanjut', {
+        id: editingItem.id,
+        status_rujukan: editStatusRujukan,
+        catatan: editCatatan.trim() || null,
+        selesai: editSelesai,
+      });
+
+      // Update state & legacy localStorage
       const updatedList = items.map((item) => {
         if (item.id === editingItem.id) {
-          return {
-            ...item,
-            status_rujukan: editStatusRujukan,
-            catatan: editCatatan.trim() || null,
-            selesai: editSelesai,
-            updated_at: nowIso,
-          };
+          return updatedItem;
         }
         return item;
       });

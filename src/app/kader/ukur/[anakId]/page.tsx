@@ -25,6 +25,9 @@ import {
   HelpCircle,
 } from 'lucide-react';
 
+import { db, CachedPengukuran } from '@/lib/db';
+import { syncEngine } from '@/lib/syncEngine';
+
 export default function MeasurementPage() {
   const params = useParams();
   const router = useRouter();
@@ -52,15 +55,26 @@ export default function MeasurementPage() {
     async function fetchChild() {
       setLoadingChild(true);
       try {
+        let foundChild: Anak | null = null;
+
+        // 1. Check local Dexie anak_cache first (offline support)
+        try {
+          const cached = await db.anak_cache.get(childId);
+          if (cached) {
+            foundChild = cached;
+          }
+        } catch (dbErr) {
+          console.warn('Error reading from db.anak_cache:', dbErr);
+        }
+
+        // 2. If online and not found, check Supabase
         const isRealSupabase =
           process.env.NEXT_PUBLIC_SUPABASE_URL &&
           !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project') &&
           !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
 
-        let foundChild: Anak | null = null;
-
-        if (isRealSupabase) {
-          const { data, error } = await supabase
+        if (!foundChild && isRealSupabase && navigator.onLine) {
+          const { data } = await supabase
             .from('anak')
             .select('*')
             .eq('id', childId)
@@ -68,17 +82,19 @@ export default function MeasurementPage() {
 
           if (data) {
             foundChild = data;
+            await db.anak_cache.put(data);
           }
         }
 
         if (!foundChild) {
-          // Check localStorage
+          // Check legacy localStorage
           const localSaved = localStorage.getItem('sg_local_anak');
           if (localSaved) {
             const list: Anak[] = JSON.parse(localSaved);
             const found = list.find((c) => c.id === childId);
             if (found) {
               foundChild = found;
+              await db.anak_cache.put(found);
             }
           }
         }
@@ -193,7 +209,7 @@ export default function MeasurementPage() {
 
   // Execute save to database / local storage
   const executeSave = async () => {
-    if (!child) return;
+    if (!child || isSaving) return;
 
     setIsSaving(true);
     setErrorMessage(null);
@@ -205,155 +221,52 @@ export default function MeasurementPage() {
       const heightNum = height;
       const today = new Date().toISOString().split('T')[0];
 
-      const isRealSupabase =
-        process.env.NEXT_PUBLIC_SUPABASE_URL &&
-        !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project') &&
-        !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
+      const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : false;
 
-      let savedRow: Pengukuran;
+      // Raw measurement payload (no z_tbu, z_bbu, status calculated here)
+      const rawPayload = {
+        id: newMeasurementId,
+        anak_id: child.id,
+        desa_id: child.desa_id || 1,
+        posyandu_id: child.posyandu_id || 1,
+        tgl_ukur: today,
+        berat_kg: weightNum,
+        tinggi_cm: heightNum,
+        cara_ukur: method,
+        berat_manual: true,
+      };
 
-      if (isRealSupabase) {
-        // Rule: z_tbu, z_bbu, and status are NEVER calculated in frontend or sent to Supabase.
-        // Database triggers compute anthropometrics on the server.
-        const dbPayload = {
-          id: newMeasurementId,
-          anak_id: child.id,
-          desa_id: child.desa_id || 1,
-          posyandu_id: child.posyandu_id || 1,
-          tgl_ukur: today,
-          berat_kg: weightNum,
-          tinggi_cm: heightNum,
-          cara_ukur: method,
-          berat_manual: true,
-        };
+      // Rule 6: Z-score and status are calculated only by the database trigger.
+      // When a measurement is saved offline, show a neutral card:
+      // "Data tersimpan di HP. Hasil warna muncul setelah data terkirim."
+      const cachedPeng: CachedPengukuran = {
+        ...rawPayload,
+        z_tbu: null,
+        z_bbu: null,
+        status: null,
+        is_offline: !isOnline,
+      };
 
-        // Upsert into pengukuran with ignoreDuplicates
-        const { error: upsertError } = await supabase
-          .from('pengukuran')
-          .upsert(dbPayload, { ignoreDuplicates: true });
+      // 1. Save to local Dexie cache immediately
+      await db.pengukuran_cache.put(cachedPeng);
 
-        if (upsertError) {
-          throw new Error(upsertError.message || 'Gagal menyimpan ke database');
-        }
+      // 2. Enqueue into Outbox (Rule 3: Every write is saved to the outbox first)
+      await syncEngine.enqueue('pengukuran', rawPayload);
 
-        // Read the saved row back
-        const { data: fetchedRow, error: fetchSavedError } = await supabase
-          .from('pengukuran')
-          .select('*')
-          .eq('id', newMeasurementId)
-          .single();
-
-        if (fetchSavedError || !fetchedRow) {
-          throw new Error('Gagal membaca ulang data pengukuran');
-        }
-
-        savedRow = fetchedRow;
-
-        // Auto create follow-up if status is merah or kuning
-        if (savedRow.status === 'merah' || savedRow.status === 'kuning') {
-          await supabase.from('tindak_lanjut').upsert(
-            {
-              pengukuran_id: savedRow.id,
-              anak_id: child.id,
-              desa_id: child.desa_id || 1,
-              posyandu_id: child.posyandu_id || 1,
-              tgl_kunjungan_ulang: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
-              status_rujukan: 'belum',
-              catatan:
-                savedRow.status === 'merah'
-                  ? 'Indikasi stunting: Segera rujuk ke Puskesmas'
-                  : 'Rekomendasikan asupan telur atau protein hewani',
-              selesai: false,
-            },
-            { ignoreDuplicates: true }
-          );
-        }
-
-        // Also cache locally for offline access
-        saveToLocalStorage(savedRow);
-      } else {
-        // Fallback local persistence (offline demo mode)
-        // Check previous measurement for weight stagnation (2T rule)
-        let isWeightStagnant = false;
-        try {
-          const existingHistory = localStorage.getItem('sg_local_pengukuran');
-          if (existingHistory) {
-            const list: Pengukuran[] = JSON.parse(existingHistory);
-            const prevs = list.filter((p) => p.anak_id === child.id);
-            if (prevs.length > 0) {
-              const latestPrev = prevs[0];
-              if (weightNum <= latestPrev.berat_kg) {
-                isWeightStagnant = true;
-              }
-            }
-          }
-        } catch {}
-
-        // Calculate offline Z-Scores and Status for demo
-        const anthropometrics = calculateZScores(
-          ageInMonths,
-          child.jenis_kelamin,
-          heightNum,
-          weightNum
-        );
-
-        let finalStatus = anthropometrics.status;
-        if (isWeightStagnant && finalStatus === 'hijau') {
-          finalStatus = 'kuning';
-        }
-
-        savedRow = {
-          id: newMeasurementId,
-          anak_id: child.id,
-          desa_id: child.desa_id || 1,
-          posyandu_id: child.posyandu_id || 1,
-          tgl_ukur: today,
-          berat_kg: weightNum,
-          tinggi_cm: heightNum,
-          cara_ukur: method,
-          berat_manual: true,
-          z_tbu: anthropometrics.z_tbu,
-          z_bbu: anthropometrics.z_bbu,
-          status: finalStatus,
-        };
-
-        saveToLocalStorage(savedRow);
-
-        // If merah or kuning, create local follow-up in sg_local_tindak_lanjut
-        if (savedRow.status === 'merah' || savedRow.status === 'kuning') {
-          try {
-            const rawTl = localStorage.getItem('sg_local_tindak_lanjut');
-            const tlList = rawTl ? JSON.parse(rawTl) : [];
-            const newTl = {
-              id: Date.now(),
-              pengukuran_id: savedRow.id,
-              anak_id: child.id,
-              desa_id: child.desa_id || 1,
-              posyandu_id: child.posyandu_id || 1,
-              tgl_kunjungan_ulang: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
-              status_rujukan: 'belum',
-              catatan:
-                savedRow.status === 'merah'
-                  ? 'Indikasi stunting: Segera rujuk ke Puskesmas'
-                  : 'Rekomendasikan asupan telur atau protein hewani',
-              selesai: false,
-              updated_at: new Date().toISOString(),
-              anak: child,
-              pengukuran: savedRow,
-            };
-            tlList.unshift(newTl);
-            localStorage.setItem('sg_local_tindak_lanjut', JSON.stringify(tlList));
-          } catch {}
-        }
-      }
+      // 3. Maintain legacy fallback localStorage
+      try {
+        const rawExisting = localStorage.getItem('sg_local_pengukuran');
+        const list: Pengukuran[] = rawExisting ? JSON.parse(rawExisting) : [];
+        const filtered = list.filter((p) => p.id !== newMeasurementId);
+        filtered.unshift(cachedPeng);
+        localStorage.setItem('sg_local_pengukuran', JSON.stringify(filtered));
+      } catch {}
 
       // Navigate to the result screen with its id
-      router.push(`/kader/hasil/${savedRow.id}`);
+      router.push(`/kader/hasil/${newMeasurementId}`);
     } catch (err: any) {
       console.error('Error saving measurement:', err);
-      // Requirement: show "Data belum tersimpan. Coba lagi." and keep the entered numbers
       setErrorMessage('Data belum tersimpan. Coba lagi.');
-    } finally {
       setIsSaving(false);
     }
   };
@@ -373,6 +286,7 @@ export default function MeasurementPage() {
 
   // Main button trigger "Lihat Hasil"
   const handleLihatHasilPress = () => {
+    if (isSaving) return;
     setErrorMessage(null);
 
     // Validate weight is entered
