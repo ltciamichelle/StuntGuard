@@ -35,26 +35,53 @@ export interface CachedTindakLanjut extends TindakLanjut {
   is_offline?: boolean;
 }
 
+export interface CachedWhoReference {
+  id: string; // `${indikator}_${jenis_kelamin}_${umur_bulan}`
+  indikator: 'tbu' | 'bbu';
+  jenis_kelamin: 'L' | 'P';
+  umur_bulan: number;
+  l: number;
+  m: number;
+  s: number;
+}
+
 export class StuntGuardDexieDB extends Dexie {
   anak_cache!: Table<Anak, string>;
   profile_cache!: Table<CachedProfile, string>;
   tindak_lanjut_cache!: Table<CachedTindakLanjut, number>;
   pengukuran_cache!: Table<CachedPengukuran, string>;
   outbox!: Table<OutboxItem, string>;
+  who_reference_cache!: Table<CachedWhoReference, string>;
 
   constructor() {
     super('StuntGuardDB');
-    this.version(1).stores({
+    this.version(2).stores({
       anak_cache: 'id, posyandu_id, desa_id, nik, nama',
       profile_cache: 'id, user_id, posyandu_id, desa_id',
       tindak_lanjut_cache: 'id, pengukuran_id, anak_id, posyandu_id, selesai, tgl_kunjungan_ulang',
       pengukuran_cache: 'id, anak_id, posyandu_id, tgl_ukur',
       outbox: 'id, table, status, created_at',
+      who_reference_cache: 'id, indikator, jenis_kelamin, umur_bulan',
     });
   }
 }
 
 export const db = new StuntGuardDexieDB();
+
+/**
+ * Initialize WHO reference cache in IndexedDB if empty
+ */
+export async function initWhoReferenceCache(): Promise<void> {
+  try {
+    const count = await db.who_reference_cache.count();
+    if (count < 244) {
+      const { WHO_REFERENCE_DATA } = await import('./whoReferenceData');
+      await db.who_reference_cache.bulkPut(WHO_REFERENCE_DATA);
+    }
+  } catch (err) {
+    console.warn('Gagal menginisialisasi who_reference_cache:', err);
+  }
+}
 
 /**
  * Clear all local cached data (used when logging out after warning)

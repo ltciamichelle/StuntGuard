@@ -21,6 +21,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { db, CachedPengukuran } from '@/lib/db';
+import { GrowthCharts } from '@/components/GrowthCharts';
 
 export default function MeasurementResultPage() {
   const params = useParams();
@@ -30,6 +31,7 @@ export default function MeasurementResultPage() {
 
   const [pengukuran, setPengukuran] = useState<CachedPengukuran | null>(null);
   const [child, setChild] = useState<Anak | null>(null);
+  const [childMeasurements, setChildMeasurements] = useState<Pengukuran[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -38,6 +40,7 @@ export default function MeasurementResultPage() {
       try {
         let foundPengukuran: CachedPengukuran | null = null;
         let foundChild: Anak | null = null;
+        let allMeasurements: Pengukuran[] = [];
 
         // 1. Read from Dexie local IndexedDB first
         try {
@@ -46,6 +49,13 @@ export default function MeasurementResultPage() {
             foundPengukuran = cachedP;
             const cachedC = await db.anak_cache.get(cachedP.anak_id);
             if (cachedC) foundChild = cachedC;
+
+            // Fetch all cached measurements for this child
+            const list = await db.pengukuran_cache
+              .where('anak_id')
+              .equals(cachedP.anak_id)
+              .toArray();
+            allMeasurements = list;
           }
         } catch (dbErr) {
           console.warn('Error reading from IndexedDB:', dbErr);
@@ -79,6 +89,20 @@ export default function MeasurementResultPage() {
             if (cData) {
               foundChild = cData;
               await db.anak_cache.put(cData);
+            }
+
+            // Fetch all child measurements from server
+            const { data: serverMeasurements } = await supabase
+              .from('pengukuran')
+              .select('*')
+              .eq('anak_id', pData.anak_id)
+              .order('tgl_ukur', { ascending: true });
+
+            if (serverMeasurements && serverMeasurements.length > 0) {
+              allMeasurements = serverMeasurements;
+              await db.pengukuran_cache.bulkPut(
+                serverMeasurements.map((m) => ({ ...m, is_offline: false }))
+              );
             }
           }
         }
@@ -135,8 +159,17 @@ export default function MeasurementResultPage() {
           };
         }
 
+        // Ensure current measurement is in the list
+        if (foundPengukuran) {
+          const exists = allMeasurements.some((m) => m.id === foundPengukuran!.id);
+          if (!exists) {
+            allMeasurements.push(foundPengukuran);
+          }
+        }
+
         setPengukuran(foundPengukuran);
         setChild(foundChild);
+        setChildMeasurements(allMeasurements);
       } catch (err) {
         console.error('Error fetching measurement result:', err);
       } finally {
@@ -557,21 +590,14 @@ export default function MeasurementResultPage() {
           </Card>
         </div>
 
-        {/* 4. Growth Curve Chart Placeholder (Requirement: Leave a card placeholder) */}
-        <Card padding="md" className="border-2 border-dashed border-slate-300 bg-slate-50/70 text-center py-5">
-          <div className="w-10 h-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slateTeal mx-auto mb-2 shadow-sm">
-            <LineChart size={20} />
-          </div>
-          <h4 className="text-[14px] font-extrabold text-slate-800">
-            Grafik Kurva Pertumbuhan WHO (KMS Digital)
-          </h4>
-          <p className="text-[12px] text-slate-500 mt-0.5 max-w-[280px] mx-auto">
-            Visualisasi kurva standar panjang/tinggi dan berat badan terhadap usia balita.
-          </p>
-          <span className="inline-block mt-2 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 uppercase tracking-wider">
-            Fitur Segera Hadir
-          </span>
-        </Card>
+        {/* 4. Growth Curve Charts (WHO KMS Digital) */}
+        <div id="section-growth-charts">
+          <GrowthCharts
+            child={child}
+            measurements={childMeasurements}
+            selectedMeasurementId={pengukuran.id}
+          />
+        </div>
       </div>
 
       {/* 5. Disclaimer line at the bottom */}

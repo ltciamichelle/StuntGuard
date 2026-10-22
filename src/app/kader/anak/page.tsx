@@ -15,7 +15,8 @@ import {
   Baby, 
   User, 
   Calendar,
-  AlertCircle
+  AlertCircle,
+  TrendingUp,
 } from 'lucide-react';
 
 // Skenario data contoh balita awal untuk fallback lokal / demo
@@ -346,11 +347,28 @@ export default function ChildListPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      <span className="text-[12px] font-bold text-berry hidden group-hover:inline">
-                        Ukur
-                      </span>
-                      <ChevronRight size={22} className="text-slate-300 group-hover:text-berry transition-colors" />
+                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                      <div className="flex items-center gap-1">
+                        <span className="text-[12px] font-bold text-berry hidden group-hover:inline">
+                          Ukur
+                        </span>
+                        <ChevronRight size={20} className="text-slate-300 group-hover:text-berry transition-colors" />
+                      </div>
+
+                      {/* Small 'Lihat kurva' button (Requirement: Link to /kader/anak/[anakId]) */}
+                      <button
+                        type="button"
+                        id={`btn-lihat-kurva-${anak.id}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/kader/anak/${anak.id}`);
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slateTeal-light text-slate-700 hover:text-slateTeal text-[12px] font-extrabold border border-slate-200 transition-colors cursor-pointer"
+                        title="Lihat grafik kurva pertumbuhan WHO"
+                      >
+                        <TrendingUp size={13} className="text-slateTeal" />
+                        <span>Lihat kurva</span>
+                      </button>
                     </div>
                   </div>
                 </Card>

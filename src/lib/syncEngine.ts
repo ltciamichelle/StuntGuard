@@ -441,6 +441,22 @@ class SyncEngine {
       if (tlList && tlList.length > 0) {
         await db.tindak_lanjut_cache.bulkPut(tlList as CachedTindakLanjut[]);
       }
+
+      // 4. Refresh WHO Reference Cache
+      const { data: whoList } = await supabase.from('who_reference').select('*');
+      if (whoList && whoList.length > 0) {
+        await db.who_reference_cache.bulkPut(
+          whoList.map((w: any) => ({
+            id: `${w.indikator}_${w.jenis_kelamin}_${w.umur_bulan}`,
+            indikator: w.indikator,
+            jenis_kelamin: w.jenis_kelamin,
+            umur_bulan: w.umur_bulan,
+            l: w.l,
+            m: w.m,
+            s: w.s,
+          }))
+        );
+      }
     } catch (err) {
       console.warn('[SyncEngine] Cache refresh error:', err);
     }
