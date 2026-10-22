@@ -311,6 +311,8 @@ export default function DesaDashboardPage() {
   }, []);
 
   const [selectedMonth, setSelectedMonth] = useState<string>(currentMonthStr);
+  const [showExportMenu, setShowExportMenu] = useState<boolean>(false);
+  const [isExporting, setIsExporting] = useState<'xlsx' | 'pdf' | null>(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -591,89 +593,34 @@ export default function DesaDashboardPage() {
     };
   }, [childrenList, measurementsList, tindakLanjutMap, selectedPosyanduId, selectedMonth, posyanduMap]);
 
-  // Export CSV function (UTF-8 with BOM for Excel compatibility)
-  const handleExportCSV = () => {
-    const BOM = '\uFEFF';
-    const headers = [
-      'No',
-      'Nama Balita',
-      'NIK',
-      'Nama Ibu',
-      'Posyandu',
-      'Usia (Bulan)',
-      'Status Gizi',
-      'Tinggi Badan (cm)',
-      'Berat Badan (kg)',
-      'Z-Score TB/U',
-      'Z-Score BB/U',
-      'Tanggal Ukur Terakhir',
-      'Tanggal Kunjungan Ulang',
-      'Status Rujukan',
-      'Catatan Kasus',
-    ];
-
-    const rows = processedData.attentionChildren.map((item, index) => {
-      const c = item.child;
-      const m = item.latestMeasurement;
-      const tl = item.tindakLanjut;
-      const age = calculateAgeInMonths(c.tgl_lahir);
-
-      const statusLabel =
-        m?.status === 'merah'
-          ? 'Merah (Indikasi Stunting Kritis)'
-          : m?.status === 'kuning'
-          ? 'Kuning (Waspada Gagal Tumbuh)'
-          : 'Hijau (Normal)';
-
-      const rujukanLabel =
-        tl?.status_rujukan === 'belum'
-          ? 'Belum'
-          : tl?.status_rujukan === 'sudah'
-          ? 'Sudah dirujuk'
-          : tl?.status_rujukan === 'ada_hasil'
-          ? 'Ada hasil'
-          : '-';
-
-      const rowData = [
-        String(index + 1),
-        `"${c.nama.replace(/"/g, '""')}"`,
-        `"${c.nik || '-'}"`,
-        `"${c.nama_ibu.replace(/"/g, '""')}"`,
-        `"${item.posyanduName}"`,
-        String(age),
-        `"${statusLabel}"`,
-        m?.tinggi_cm ? String(m.tinggi_cm) : '-',
-        m?.berat_kg ? String(m.berat_kg) : '-',
-        m?.z_tbu !== null && m?.z_tbu !== undefined ? String(m.z_tbu) : '-',
-        m?.z_bbu !== null && m?.z_bbu !== undefined ? String(m.z_bbu) : '-',
-        m?.tgl_ukur ? formatIndonesianDate(m.tgl_ukur) : '-',
-        tl?.tgl_kunjungan_ulang ? formatIndonesianDate(tl.tgl_kunjungan_ulang) : '-',
-        `"${rujukanLabel}"`,
-        `"${(tl?.catatan || '-').replace(/"/g, '""')}"`,
-      ];
-
-      return rowData.join(';');
-    });
-
-    const csvContent = BOM + headers.join(';') + '\n' + rows.join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-
-    const posyanduLabel =
-      selectedPosyanduId === 'all'
-        ? 'Semua_Posyandu'
-        : (posyanduMap.get(parseInt(selectedPosyanduId, 10)) || 'Posyandu').replace(/\s+/g, '_');
-
-    link.setAttribute('href', url);
-    link.setAttribute(
-      'download',
-      `StuntGuard_Anak_Perlu_Perhatian_${desaName.replace(/\s+/g, '_')}_${selectedMonth}_${posyanduLabel}.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+  // Export function for Rembuk Stunting (Excel .xlsx and PDF)
+  const handleExportRembuk = async (format: 'xlsx' | 'pdf') => {
+    setIsExporting(format);
+    setShowExportMenu(false);
+    try {
+      const url = `/api/export/rembuk?format=${format}&month=${encodeURIComponent(selectedMonth)}&posyanduId=${encodeURIComponent(selectedPosyanduId)}`;
+      const res = await fetch(url);
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        alert(errJson.error || 'Gagal mengekspor data Rembuk Stunting.');
+        return;
+      }
+      const blob = await res.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      const cleanDesa = desaName.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'desa';
+      link.download = format === 'pdf' ? `rembuk_${cleanDesa}_${selectedMonth}.pdf` : `rembuk_${cleanDesa}_${selectedMonth}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      console.error('Export error:', err);
+      alert('Terjadi kesalahan saat mengunduh berkas Rembuk Stunting.');
+    } finally {
+      setIsExporting(null);
+    }
   };
 
   // Status rujukan helper
@@ -719,9 +666,11 @@ export default function DesaDashboardPage() {
         <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4">
           {/* Logo & Desa Name */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-slateTeal text-white flex items-center justify-center font-bold text-lg shadow-sm">
-              <Building2 size={22} />
-            </div>
+            <img
+              src="/logo.png"
+              alt="StuntGuard Logo"
+              className="w-11 h-11 object-contain rounded-2xl bg-white p-1 border border-slate-200/90 shadow-xs"
+            />
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[11px] font-black uppercase tracking-wider text-slateTeal bg-slateTeal-light px-2.5 py-0.5 rounded-full">
@@ -816,17 +765,81 @@ export default function DesaDashboardPage() {
             </span>
           </div>
 
-          {/* Button: Ekspor CSV (UTF-8 with BOM) */}
-          <button
-            type="button"
-            id="btn-ekspor-csv"
-            onClick={handleExportCSV}
-            disabled={processedData.attentionChildren.length === 0}
-            className="py-2.5 px-5 rounded-full bg-slateTeal hover:bg-slateTeal-dark text-white font-extrabold text-[14px] flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none cursor-pointer flex-shrink-0"
-          >
-            <Download size={18} />
-            <span>Ekspor CSV</span>
-          </button>
+          {/* Button: Ekspor untuk Rembuk Stunting offering Excel (.xlsx) and PDF */}
+          <div className="relative flex-shrink-0">
+            <button
+              type="button"
+              id="btn-ekspor-rembuk"
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              className="py-2.5 px-5 rounded-full bg-slateTeal hover:bg-slateTeal-dark text-white font-extrabold text-[14px] flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.98] cursor-pointer"
+            >
+              <Download size={18} />
+              <span>Ekspor untuk Rembuk Stunting</span>
+            </button>
+
+            {/* Dropdown Options: Excel (.xlsx) and PDF (.pdf) */}
+            {showExportMenu && (
+              <>
+                <div
+                  className="fixed inset-0 z-30"
+                  onClick={() => setShowExportMenu(false)}
+                />
+                <div
+                  id="menu-ekspor-rembuk"
+                  className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200 p-2 z-40 animate-in fade-in slide-in-from-top-2 duration-150"
+                >
+                  <div className="px-3 py-2 border-b border-slate-100">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slateTeal block">
+                      Pilih Format Berkas
+                    </span>
+                    <span className="text-[12px] text-slate-500 font-medium">
+                      Sesuai filter ({selectedMonth}, {selectedPosyanduId === 'all' ? 'Semua Posyandu' : 'Posyandu Terpilih'})
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    id="btn-unduh-excel"
+                    onClick={() => handleExportRembuk('xlsx')}
+                    disabled={isExporting !== null}
+                    className="w-full text-left p-3 rounded-xl hover:bg-emerald-50 text-slate-800 hover:text-emerald-900 transition-colors flex items-start gap-3 cursor-pointer group mt-1"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs flex-shrink-0 group-hover:scale-105 transition-transform">
+                      XLS
+                    </div>
+                    <div>
+                      <span className="text-[13px] font-extrabold text-slate-900 block group-hover:text-emerald-900">
+                        Unduh Excel (.xlsx)
+                      </span>
+                      <span className="text-[11px] text-slate-500 leading-tight block mt-0.5">
+                        3 Sheet: Ringkasan, Daftar Anak, Tindak Lanjut
+                      </span>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    id="btn-unduh-pdf"
+                    onClick={() => handleExportRembuk('pdf')}
+                    disabled={isExporting !== null}
+                    className="w-full text-left p-3 rounded-xl hover:bg-rose-50 text-slate-800 hover:text-rose-900 transition-colors flex items-start gap-3 cursor-pointer group mt-1"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-xs flex-shrink-0 group-hover:scale-105 transition-transform">
+                      PDF
+                    </div>
+                    <div>
+                      <span className="text-[13px] font-extrabold text-slate-900 block group-hover:text-rose-900">
+                        Unduh PDF (.pdf)
+                      </span>
+                      <span className="text-[11px] text-slate-500 leading-tight block mt-0.5">
+                        Format cetak A4 Laporan Rembuk Stunting
+                      </span>
+                    </div>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </section>
 
         {/* Section 1: Three Big Summary Cards + Chart Widget */}

@@ -19,8 +19,8 @@ export const metadata: Metadata = {
     title: 'StuntGuard',
   },
   icons: {
-    icon: '/favicon.svg',
-    apple: '/favicon.svg',
+    icon: '/logo.png',
+    apple: '/logo.png',
   },
 };
 

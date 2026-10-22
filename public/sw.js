@@ -10,6 +10,7 @@ const STATIC_ASSETS = [
   '/kader/tindak-lanjut',
   '/manifest.json',
   '/favicon.svg',
+  '/logo.png',
 ];
 
 self.addEventListener('install', (event) => {

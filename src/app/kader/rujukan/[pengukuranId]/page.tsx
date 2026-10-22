@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Anak, Pengukuran } from '@/types/database';
 import { calculateAgeInMonths, formatIndonesianDate } from '@/lib/utils';
-import { ArrowLeft, Printer } from 'lucide-react';
+import { ArrowLeft, Printer, Download, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui';
 
 export default function SuratRujukanPage() {
@@ -16,7 +16,9 @@ export default function SuratRujukanPage() {
 
   const [pengukuran, setPengukuran] = useState<Pengukuran | null>(null);
   const [child, setChild] = useState<Anak | null>(null);
+  const [kaderName, setKaderName] = useState<string>('Kader Posyandu');
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -97,6 +99,28 @@ export default function SuratRujukanPage() {
           };
         }
 
+        if (isRealSupabase) {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('nama')
+              .eq('id', user.id)
+              .single();
+            if (profile?.nama) setKaderName(profile.nama);
+          }
+        } else {
+          const cookieMatch = document.cookie
+            .split('; ')
+            .find((row) => row.startsWith('sg_dev_session='));
+          if (cookieMatch) {
+            try {
+              const session = JSON.parse(decodeURIComponent(cookieMatch.split('=')[1]));
+              if (session.nama) setKaderName(session.nama);
+            } catch {}
+          }
+        }
+
         setPengukuran(foundP);
         setChild(foundC);
       } catch (e) {
@@ -110,6 +134,39 @@ export default function SuratRujukanPage() {
       loadData();
     }
   }, [pengukuranId]);
+
+  const handleDownloadPdf = async () => {
+    if (!pengukuran || !child) return;
+    setDownloading(true);
+    try {
+      const url = `/api/export/rujukan?pengukuranId=${encodeURIComponent(pengukuran.id)}`;
+      const res = await fetch(url);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || 'Gagal mengunduh surat rujukan PDF.');
+        return;
+      }
+      const blob = await res.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      const cleanChildName = child.nama
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '') || 'anak';
+      const cleanDate = pengukuran.tgl_ukur.replace(/[^0-9-]+/g, '_');
+      link.download = `rujukan_${cleanChildName}_${cleanDate}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      console.error('Download PDF error:', err);
+      alert('Terjadi kesalahan saat mengunduh surat rujukan PDF.');
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const handlePrint = () => {
     window.print();
@@ -139,36 +196,59 @@ export default function SuratRujukanPage() {
   return (
     <div className="min-h-screen bg-slate-100 py-6 px-3 flex flex-col items-center print:bg-white print:p-0">
       {/* On-screen Action Toolbar (Hidden during print) */}
-      <div className="w-full max-w-[650px] mb-4 flex items-center justify-between print:hidden">
+      <div className="w-full max-w-[650px] mb-4 flex items-center justify-between print:hidden gap-2">
         <button
           onClick={() => router.push(`/kader/hasil/${pengukuranId}`)}
-          className="px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-berry text-[13px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+          className="px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-berry text-[13px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
         >
           <ArrowLeft size={16} />
-          Kembali ke Hasil
+          Kembali
         </button>
 
-        <button
-          onClick={handlePrint}
-          className="px-4 py-2 rounded-xl bg-berry hover:bg-berry-hover text-white text-[13px] font-bold flex items-center gap-2 shadow-md transition-colors cursor-pointer"
-        >
-          <Printer size={16} />
-          Cetak Surat Rujukan
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Download Official A4 PDF */}
+          <button
+            type="button"
+            id="btn-unduh-surat-rujukan-pdf"
+            onClick={handleDownloadPdf}
+            disabled={downloading}
+            className="px-4 py-2.5 rounded-xl bg-slateTeal hover:bg-slateTeal-dark text-white text-[13px] font-extrabold flex items-center gap-2 shadow-md transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50"
+          >
+            <Download size={16} />
+            <span>{downloading ? 'Mengunduh...' : 'Unduh Surat Rujukan (PDF)'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handlePrint}
+            className="px-3 py-2.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-[13px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+            title="Cetak langsung melalui browser"
+          >
+            <Printer size={16} />
+            <span className="hidden sm:inline">Cetak</span>
+          </button>
+        </div>
       </div>
 
       {/* Printable Sheet (Standard A4 / Letter format) */}
       <div className="w-full max-w-[650px] bg-white border border-slate-300 rounded-2xl p-7 shadow-sm text-slate-900 print:border-none print:shadow-none print:p-6 print:w-full print:max-w-none">
-        {/* Letterhead (KOP Surat) */}
-        <div className="border-b-2 border-slate-900 pb-3 mb-5 text-center">
-          <h2 className="text-[17px] font-extrabold uppercase tracking-wide leading-tight">
-            Pos Pelayanan Terpadu (Posyandu) Balita
-          </h2>
-          <p className="text-[12px] font-semibold text-slate-700 uppercase tracking-wider mt-0.5">
-            Sistem Deteksi Dini Pencegahan Stunting — StuntGuard
-          </p>
-          <div className="text-[10px] text-slate-500 mt-1">
-            Wilayah Kerja Puskesmas Kecamatan / Bidan Desa
+        {/* Letterhead (KOP Surat) with StuntGuard Logo */}
+        <div className="border-b-2 border-slate-900 pb-3 mb-5 flex items-center gap-3">
+          <img
+            src="/logo.png"
+            alt="StuntGuard Logo"
+            className="w-14 h-14 object-contain flex-shrink-0"
+          />
+          <div className="text-center flex-1 pr-14">
+            <h2 className="text-[17px] font-extrabold uppercase tracking-wide leading-tight">
+              Pos Pelayanan Terpadu (Posyandu) Balita
+            </h2>
+            <p className="text-[12px] font-semibold text-slate-700 uppercase tracking-wider mt-0.5">
+              Sistem Deteksi Dini Pencegahan Stunting — StuntGuard
+            </p>
+            <div className="text-[10px] text-slate-500 mt-1">
+              Wilayah Kerja Puskesmas Kecamatan / Bidan Desa
+            </div>
           </div>
         </div>
 
@@ -268,7 +348,7 @@ export default function SuratRujukanPage() {
         {/* Required Mandatory Sentence */}
         <div className="p-3 bg-amber-50 border-2 border-amber-300 rounded-lg text-center my-4">
           <p className="text-[13px] font-extrabold text-amber-900 tracking-wide">
-            &ldquo;Hasil ini adalah skrining awal, bukan diagnosis.&rdquo;
+            &ldquo;Hasil ini adalah skrining awal, bukan diagnosis. Mohon pemeriksaan oleh tenaga kesehatan.&rdquo;
           </p>
         </div>
 
@@ -284,9 +364,9 @@ export default function SuratRujukanPage() {
 
           <div>
             <p className="text-slate-600">Kader Posyandu Pengirim,</p>
-            <p className="font-semibold text-slate-800">Kader Posyandu</p>
+            <p className="font-semibold text-slate-800">{kaderName}</p>
             <div className="h-16"></div>
-            <p className="font-bold underline text-slate-900">( .................................................. )</p>
+            <p className="font-bold underline text-slate-900">( {kaderName} )</p>
             <p className="text-[11px] text-slate-500">Tanda Tangan & Nama Terang</p>
           </div>
         </div>

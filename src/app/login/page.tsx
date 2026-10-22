@@ -126,14 +126,13 @@ export default function LoginPage() {
     <main className="min-h-screen px-5 py-8 flex flex-col justify-between max-w-[420px] mx-auto w-full">
       {/* Top Brand Section */}
       <div>
-        <div className="flex flex-col items-center text-center mt-6 mb-8">
-          <div className="w-16 h-16 rounded-[22px] bg-berry text-white flex items-center justify-center font-extrabold text-2xl shadow-lg mb-3">
-            SG
-          </div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-            StuntGuard
-          </h1>
-          <p className="text-[14px] text-slateTeal font-semibold mt-1">
+        <div className="flex flex-col items-center text-center mt-3 mb-6">
+          <img
+            src="/logo.png"
+            alt="StuntGuard Logo"
+            className="w-32 h-32 object-contain drop-shadow-sm mb-1"
+          />
+          <p className="text-[14px] text-slateTeal font-bold tracking-tight">
             Posyandu Integrasi Layanan Primer (ILP)
           </p>
         </div>

@@ -188,14 +188,21 @@ function KaderHomeContent() {
       <div>
         {/* Top Header Bar with Fixed Sync Status Badge & Small Logout */}
         <header className="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
-          {/* Posyandu Badge */}
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-berry text-white flex items-center justify-center font-bold text-sm">
-              SG
+          {/* Posyandu Badge with StuntGuard Logo */}
+          <div className="flex items-center gap-2.5">
+            <img
+              src="/logo.png"
+              alt="StuntGuard Logo"
+              className="w-9 h-9 object-contain rounded-xl bg-white p-0.5 border border-slate-200/80 shadow-xs"
+            />
+            <div>
+              <span className="text-[10px] font-black text-berry uppercase tracking-wider block leading-none">
+                StuntGuard
+              </span>
+              <span className="text-[13px] font-bold text-slateTeal uppercase tracking-tight block leading-tight mt-0.5">
+                {posyanduName}
+              </span>
             </div>
-            <span className="text-[13px] font-bold text-slateTeal uppercase tracking-wider">
-              {posyanduName}
-            </span>
           </div>
 
           <div className="flex items-center gap-2">
