@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Card, Button } from '@/components/ui';
 import { SyncStatusBadge } from '@/components/SyncStatusBadge';
@@ -13,11 +13,17 @@ import {
   ChevronRight, 
   Heart,
   Baby,
-  Calendar
+  Calendar,
+  CheckCircle2,
+  X
 } from 'lucide-react';
 
-export default function KaderHomePage() {
+function KaderHomeContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const showSavedNotification = searchParams.get('saved') === 'true';
+  const [dismissedToast, setDismissedToast] = useState(false);
+
   const [userName, setUserName] = useState<string>('Kader');
   const [posyanduName, setPosyanduName] = useState<string>('Posyandu Melati 03');
   const [loading, setLoading] = useState(true);
@@ -114,7 +120,7 @@ export default function KaderHomePage() {
             <button
               id="btn-logout"
               onClick={handleLogout}
-              className="p-2 rounded-full text-slate-500 hover:text-berry hover:bg-slate-100 transition-colors"
+              className="p-2 rounded-full text-slate-500 hover:text-berry hover:bg-slate-100 transition-colors cursor-pointer"
               title="Keluar dari akun"
               aria-label="Keluar"
             >
@@ -122,6 +128,33 @@ export default function KaderHomePage() {
             </button>
           </div>
         </header>
+
+        {/* Success Notification Banner when returning from Measurement */}
+        {showSavedNotification && !dismissedToast && (
+          <div
+            id="toast-saved-success"
+            className="mb-4 p-3.5 bg-emerald-50 border-2 border-emerald-300 rounded-2xl flex items-center justify-between gap-3 text-emerald-900 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300"
+          >
+            <div className="flex items-center gap-2.5">
+              <CheckCircle2 size={22} className="text-emerald-600 flex-shrink-0" />
+              <div>
+                <p className="text-[14px] font-extrabold leading-tight">
+                  Pengukuran Berhasil Disimpan!
+                </p>
+                <p className="text-[12px] text-emerald-700 mt-0.5">
+                  Data balita telah tersimpan dan siap dipantau.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setDismissedToast(true)}
+              className="p-1 rounded-full text-emerald-700 hover:bg-emerald-100 transition-colors"
+              aria-label="Tutup notifikasi"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        )}
 
         {/* Greeting Banner */}
         <div className="mb-6">
@@ -227,3 +260,12 @@ export default function KaderHomePage() {
     </div>
   );
 }
+
+export default function KaderHomePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen px-4 py-16 text-center text-slate-500">Memuat beranda...</div>}>
+      <KaderHomeContent />
+    </Suspense>
+  );
+}
+
