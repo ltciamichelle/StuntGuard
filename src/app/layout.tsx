@@ -30,8 +30,8 @@ export default function RootLayout({
   return (
     <html lang="id" className={plusJakartaSans.variable}>
       <body className="min-h-screen bg-pageBg font-sans text-slate-800 antialiased flex flex-col items-center">
-        {/* Mobile-first frame container: 360px minimum width standard */}
-        <div className="w-full max-w-[420px] min-h-screen flex flex-col bg-pageBg">
+        {/* Root container: allows desktop dashboards (like /desa up to 1280px) and mobile frames */}
+        <div className="w-full min-h-screen flex flex-col items-center bg-pageBg">
           {children}
         </div>
       </body>
