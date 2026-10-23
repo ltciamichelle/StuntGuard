@@ -48,7 +48,8 @@ const DEFAULT_CHILDREN: Anak[] = [
     nama: 'Rayyan Pratama',
     nik: '3201124508230001',
     no_kk: '3201120000000001',
-    nama_ibu: 'Siti Rahmawati',
+    nama_pengasuh: 'Siti Rahmawati',
+    hubungan_pengasuh: 'ibu',
     tgl_lahir: '2025-08-15',
     jenis_kelamin: 'L',
   },
@@ -59,7 +60,8 @@ const DEFAULT_CHILDREN: Anak[] = [
     nama: 'Aisyah Putri',
     nik: '3201125510240002',
     no_kk: '3201120000000002',
-    nama_ibu: 'Nurul Hidayah',
+    nama_pengasuh: 'Nurul Hidayah',
+    hubungan_pengasuh: 'ibu',
     tgl_lahir: '2025-04-10',
     jenis_kelamin: 'P',
   },
@@ -70,7 +72,8 @@ const DEFAULT_CHILDREN: Anak[] = [
     nama: 'Muhammad Bilal',
     nik: '3201121203240003',
     no_kk: '3201120000000003',
-    nama_ibu: 'Dewi Lestari',
+    nama_pengasuh: 'Dewi Lestari',
+    hubungan_pengasuh: 'ibu',
     tgl_lahir: '2024-11-20',
     jenis_kelamin: 'L',
   },
@@ -81,7 +84,8 @@ const DEFAULT_CHILDREN: Anak[] = [
     nama: 'Khadijah Althafunisa',
     nik: '3201126701250004',
     no_kk: '3201120000000004',
-    nama_ibu: 'Fatimah Zahra',
+    nama_pengasuh: 'Fatimah Zahra',
+    hubungan_pengasuh: 'ibu',
     tgl_lahir: '2025-01-05',
     jenis_kelamin: 'P',
   },
@@ -92,7 +96,8 @@ const DEFAULT_CHILDREN: Anak[] = [
     nama: 'Kenzo Alvaro',
     nik: '3201122206240005',
     no_kk: '3201120000000005',
-    nama_ibu: 'Ratna Sari',
+    nama_pengasuh: 'Ratna Sari',
+    hubungan_pengasuh: 'ibu',
     tgl_lahir: '2024-06-18',
     jenis_kelamin: 'L',
   },
@@ -103,7 +108,8 @@ const DEFAULT_CHILDREN: Anak[] = [
     nama: 'Naura Salsabila',
     nik: '3201124409240006',
     no_kk: '3201120000000006',
-    nama_ibu: 'Indah Permata',
+    nama_pengasuh: 'Indah Permata',
+    hubungan_pengasuh: 'ibu',
     tgl_lahir: '2024-09-12',
     jenis_kelamin: 'P',
   },
@@ -114,7 +120,8 @@ const DEFAULT_CHILDREN: Anak[] = [
     nama: 'Fatih Ar-Rasyid',
     nik: '3201121511240007',
     no_kk: '3201120000000007',
-    nama_ibu: 'Mega Utami',
+    nama_pengasuh: 'Mega Utami',
+    hubungan_pengasuh: 'ibu',
     tgl_lahir: '2024-11-15',
     jenis_kelamin: 'L',
   },
@@ -125,7 +132,8 @@ const DEFAULT_CHILDREN: Anak[] = [
     nama: 'Zahra Humaira',
     nik: '3201125203250008',
     no_kk: '3201120000000008',
-    nama_ibu: 'Dian Anggraini',
+    nama_pengasuh: 'Dian Anggraini',
+    hubungan_pengasuh: 'ibu',
     tgl_lahir: '2025-03-22',
     jenis_kelamin: 'P',
   },
@@ -253,7 +261,7 @@ const DEFAULT_TINDAK_LANJUT: TindakLanjut[] = [
     posyandu_id: 1,
     tgl_kunjungan_ulang: '2026-10-26',
     status_rujukan: 'belum',
-    catatan: 'Kader mengingatkan ibu untuk PMT protein hewani.',
+    catatan: 'Kader mengingatkan pengasuh untuk PMT protein hewani.',
     selesai: false,
     updated_at: '2026-10-18T10:00:00Z',
   },
@@ -1172,7 +1180,7 @@ export default function DesaDashboardPage() {
                                 {c.nama}
                               </span>
                               <span className="text-[11px] text-slate-500 font-normal">
-                                Usia: {ageInMonths} bln • Ibu: {c.nama_ibu}
+                                Usia: {ageInMonths} bln • Pengasuh: {c.nama_pengasuh || c.nama_ibu}
                               </span>
                             </div>
                           </div>
@@ -1260,7 +1268,7 @@ export default function DesaDashboardPage() {
                       {child.nama}
                     </span>
                     <span className="text-[12px] text-slate-600 block mt-0.5">
-                      Ibu: {child.nama_ibu} • {calculateAgeInMonths(child.tgl_lahir)} Bln
+                      Pengasuh: {child.nama_pengasuh || child.nama_ibu} • {calculateAgeInMonths(child.tgl_lahir)} Bln
                     </span>
                     <span className="text-[11px] font-semibold text-slateTeal block mt-1">
                       {posyanduName}

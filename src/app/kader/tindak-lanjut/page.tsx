@@ -8,6 +8,7 @@ import { SyncStatusBadge } from '@/components/SyncStatusBadge';
 import { formatIndonesianDate } from '@/lib/utils';
 import { Anak, Pengukuran, TindakLanjut, StatusRujukan } from '@/types/database';
 import {
+  ChevronLeft,
   ArrowLeft,
   Phone,
   CheckCircle2,
@@ -17,6 +18,8 @@ import {
   History,
   Check,
   AlertCircle,
+  User,
+  Info,
 } from 'lucide-react';
 
 import { db, CachedTindakLanjut } from '@/lib/db';
@@ -35,8 +38,8 @@ export default function TindakLanjutPage() {
   const [loading, setLoading] = useState(true);
   const [showHistory, setShowHistory] = useState(false);
 
-  // Modal: Hubungi Ibu
-  const [selectedMotherItem, setSelectedMotherItem] = useState<TindakLanjutItem | null>(null);
+  // Modal: Hubungi Pengasuh
+  const [selectedCaregiverItem, setSelectedCaregiverItem] = useState<TindakLanjutItem | null>(null);
 
   // Modal: Catat Hasil Kunjungan
   const [editingItem, setEditingItem] = useState<TindakLanjutItem | null>(null);
@@ -114,7 +117,8 @@ export default function TindakLanjutPage() {
                 nama: 'Rayyan Pratama',
                 nik: '3201124508230001',
                 no_kk: '3201120000000001',
-                nama_ibu: 'Siti Rahmawati',
+                nama_pengasuh: 'Siti Rahmawati',
+                hubungan_pengasuh: 'ibu',
                 tgl_lahir: '2025-08-15',
                 jenis_kelamin: 'L',
               },
@@ -141,7 +145,7 @@ export default function TindakLanjutPage() {
               posyandu_id: 1,
               tgl_kunjungan_ulang: '2026-10-25', // Future date -> Urgent
               status_rujukan: 'sudah',
-              catatan: 'Sudah dirujuk ke Bidan Desa. Kader perlu mengecek apakah ibu sudah mulai memberikan 1 telur per hari.',
+              catatan: 'Sudah dirujuk ke Bidan Desa. Kader perlu mengecek apakah pengasuh sudah mulai memberikan 1 telur per hari.',
               selesai: false,
               updated_at: '2026-10-20T14:30:00Z',
               anak: {
@@ -151,7 +155,8 @@ export default function TindakLanjutPage() {
                 nama: 'Aisyah Putri',
                 nik: '3201125510240002',
                 no_kk: '3201120000000002',
-                nama_ibu: 'Nurul Hidayah',
+                nama_pengasuh: 'Nurul Hidayah',
+                hubungan_pengasuh: 'ibu',
                 tgl_lahir: '2025-04-10',
                 jenis_kelamin: 'P',
               },
@@ -178,7 +183,7 @@ export default function TindakLanjutPage() {
               posyandu_id: 1,
               tgl_kunjungan_ulang: '2026-10-12',
               status_rujukan: 'ada_hasil',
-              catatan: 'Kunjungan rumah terlaksana. Ibu sudah memberikan makanan tinggi protein, berat badan balita naik 400 gram.',
+              catatan: 'Kunjungan rumah terlaksana. Pengasuh sudah memberikan makanan tinggi protein, berat badan balita naik 400 gram.',
               selesai: true,
               updated_at: '2026-10-14T09:00:00Z',
               anak: {
@@ -188,7 +193,8 @@ export default function TindakLanjutPage() {
                 nama: 'Muhammad Bilal',
                 nik: '3201121203240003',
                 no_kk: '3201120000000003',
-                nama_ibu: 'Dewi Lestari',
+                nama_pengasuh: 'Dewi Lestari',
+                hubungan_pengasuh: 'ibu',
                 tgl_lahir: '2024-11-20',
                 jenis_kelamin: 'L',
               },
@@ -437,7 +443,7 @@ export default function TindakLanjutPage() {
             {displayedItems.map((item) => {
               const childName = item.anak?.nama || 'Nama Balita Tidak Dikenal';
               const childGender = item.anak?.jenis_kelamin || 'L';
-              const motherName = item.anak?.nama_ibu || 'Ibu Balita';
+              const caregiverName = item.anak?.nama_pengasuh || item.anak?.nama_ibu || 'Pengasuh Balita';
               const isPast = isDatePast(item.tgl_kunjungan_ulang);
               const measurementStatus = item.pengukuran?.status || 'kuning';
 
@@ -457,7 +463,7 @@ export default function TindakLanjutPage() {
                     <StatusBadge status={measurementStatus} size="sm" />
 
                     <div className="flex items-center gap-1.5">
-                      {/* Overdue Tag Requirement: "If tgl_kunjungan_ulang is already past, show an 'Terlambat' tag." */}
+                      {/* Overdue Tag */}
                       {isPast && !item.selesai && (
                         <span
                           id={`tag-terlambat-${item.id}`}
@@ -477,19 +483,19 @@ export default function TindakLanjutPage() {
                     </div>
                   </div>
 
-                  {/* Child Name & Mother */}
+                  {/* Child Name & Pengasuh */}
                   <div className="pt-2.5 flex items-start justify-between gap-3">
                     <div>
                       <h3 className="text-[17px] font-black text-slate-900 leading-snug">
                         {childName}
                       </h3>
-                      <p className="text-[12px] text-slate-500 mt-0.5">
-                        Ibu: <strong>{motherName}</strong>
+                      <p className="text-[14px] text-text-muted mt-0.5">
+                        Pengasuh: <strong className="text-text font-semibold">{caregiverName}</strong>
                       </p>
                     </div>
 
-                    <div className="w-10 h-10 rounded-xl bg-berry-light text-berry flex items-center justify-center font-bold text-base flex-shrink-0">
-                      {childGender === 'L' ? '👦' : '👧'}
+                    <div className="w-10 h-10 rounded-full bg-primary-selected text-primary flex items-center justify-center font-bold flex-shrink-0">
+                      <User size={20} strokeWidth={2} />
                     </div>
                   </div>
 
@@ -524,18 +530,18 @@ export default function TindakLanjutPage() {
                     </div>
                   )}
 
-                  {/* Two Big Buttons Per Card: "Hubungi ibu" and "Catat hasil kunjungan" */}
+                  {/* Two Big Buttons Per Card: "Hubungi Pengasuh" and "Catat hasil kunjungan" */}
                   {!item.selesai && (
                     <div className="mt-3.5 grid grid-cols-2 gap-3 pt-2 border-t border-slate-100">
-                      {/* Button 1: Hubungi Ibu */}
+                      {/* Button 1: Hubungi Pengasuh */}
                       <button
                         type="button"
-                        id={`btn-hubungi-ibu-${item.id}`}
-                        onClick={() => setSelectedMotherItem(item)}
-                        className="min-h-[56px] px-3 rounded-2xl bg-white border-2 border-slate-200 text-slate-800 hover:border-slateTeal hover:text-slateTeal active:bg-slate-100 font-bold text-[14px] flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
+                        id={`btn-hubungi-pengasuh-${item.id}`}
+                        onClick={() => setSelectedCaregiverItem(item)}
+                        className="min-h-[56px] px-3 rounded-full bg-white border-2 border-teal text-teal hover:bg-slate-50 active:bg-slate-100 font-bold text-[14px] flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
                       >
-                        <Phone size={18} className="text-slateTeal" />
-                        <span>Hubungi Ibu</span>
+                        <Phone size={18} strokeWidth={2} className="text-teal" />
+                        <span>Hubungi Pengasuh</span>
                       </button>
 
                       {/* Button 2: Catat Hasil Kunjungan */}
@@ -557,61 +563,70 @@ export default function TindakLanjutPage() {
         )}
       </div>
 
-      {/* Modal 1: Hubungi Ibu (Opens text box with mother's name, no real call) */}
-      {selectedMotherItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+      {/* Modal 1: Hubungi Pengasuh */}
+      {selectedCaregiverItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
           <div
-            id="modal-hubungi-ibu"
-            className="w-full max-w-[360px] bg-white rounded-3xl p-5 shadow-2xl border-2 border-slate-200 space-y-4"
+            id="modal-hubungi-pengasuh"
+            className="w-full max-w-[380px] bg-white rounded-[24px] p-6 shadow-card border border-border space-y-4"
           >
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-slateTeal-light text-slateTeal flex items-center justify-center">
-                  <Phone size={16} />
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-full bg-teal-light text-teal flex items-center justify-center">
+                  <Phone size={20} strokeWidth={2} />
                 </div>
-                <h3 className="text-[16px] font-black text-slate-900">
-                  Kontak Ibu Balita
+                <h3 className="text-[18px] font-bold text-text">
+                  Kontak Pengasuh Balita
                 </h3>
               </div>
 
               <button
                 type="button"
-                onClick={() => setSelectedMotherItem(null)}
-                className="p-1 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                onClick={() => setSelectedCaregiverItem(null)}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-text-muted hover:text-text hover:bg-slate-100 transition-colors cursor-pointer"
+                aria-label="Tutup"
               >
-                <X size={18} />
+                <X size={20} strokeWidth={2} />
               </button>
             </div>
 
-            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2 text-[13px]">
+            <div className="p-4 bg-slate-50 border border-border rounded-[16px] space-y-2 text-[14px]">
               <div>
-                <span className="text-slate-500 text-[11px] font-semibold uppercase tracking-wider block">
+                <span className="text-text-muted text-[12px] font-semibold uppercase tracking-wider block">
                   Nama Balita
                 </span>
-                <span className="font-extrabold text-slate-900 text-[15px] block">
-                  {selectedMotherItem.anak?.nama}
+                <span className="font-bold text-text text-[16px] block">
+                  {selectedCaregiverItem.anak?.nama}
                 </span>
               </div>
 
-              <div className="pt-2 border-t border-slate-200/80">
-                <span className="text-slateTeal text-[11px] font-extrabold uppercase tracking-wider block">
-                  Nama Ibu Kandung
+              <div className="pt-2 border-t border-border">
+                <span className="text-teal text-[12px] font-bold uppercase tracking-wider block">
+                  Nama Pengasuh
                 </span>
-                <span className="font-black text-slate-900 text-[16px] block">
-                  {selectedMotherItem.anak?.nama_ibu}
+                <span className="font-bold text-text text-[16px] block">
+                  {selectedCaregiverItem.anak?.nama_pengasuh || selectedCaregiverItem.anak?.nama_ibu}
                 </span>
+                {selectedCaregiverItem.anak?.hubungan_pengasuh && (
+                  <span className="text-[12px] text-teal font-semibold capitalize block mt-0.5">
+                    Hubungan: {selectedCaregiverItem.anak.hubungan_pengasuh.replace('_', ' / ')}
+                  </span>
+                )}
               </div>
             </div>
 
-            <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-[12px] text-amber-900 leading-relaxed">
-              ℹ️ <strong>Catatan Kader:</strong> Hubungi ibu saat jam kunjungan rumah yang disepakati atau koordinasikan pendampingan bersama Bidan Desa.
+            <div className="p-3.5 bg-yellow-light/60 rounded-[16px] border border-yellow/30 text-[14px] text-text leading-relaxed flex items-start gap-2">
+              <Info size={18} strokeWidth={2} className="text-teal flex-shrink-0 mt-0.5" />
+              <div>
+                <strong>Catatan Kader:</strong> Hubungi pengasuh saat jam kunjungan rumah yang disepakati atau koordinasikan pendampingan bersama Bidan Desa.
+              </div>
             </div>
 
             <Button
               variant="secondary"
+              size="kader"
               fullWidth
-              onClick={() => setSelectedMotherItem(null)}
-              className="min-h-[56px] text-[15px] font-bold"
+              onClick={() => setSelectedCaregiverItem(null)}
             >
               Tutup
             </Button>

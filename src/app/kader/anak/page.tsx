@@ -8,14 +8,12 @@ import { SyncStatusBadge } from '@/components/SyncStatusBadge';
 import { calculateAgeInMonths } from '@/lib/utils';
 import { Anak } from '@/types/database';
 import { 
-  ArrowLeft, 
+  ChevronLeft, 
   Search, 
   UserPlus, 
   ChevronRight, 
-  Baby, 
   User, 
-  Calendar,
-  AlertCircle,
+  TriangleAlert,
   TrendingUp,
 } from 'lucide-react';
 
@@ -28,7 +26,8 @@ const FALLBACK_CHILDREN: Anak[] = [
     nama: 'Rayyan Pratama',
     nik: '3201124508230001',
     no_kk: '3201120000000001',
-    nama_ibu: 'Siti Rahmawati',
+    nama_pengasuh: 'Siti Rahmawati',
+    hubungan_pengasuh: 'ibu',
     tgl_lahir: '2025-08-15',
     jenis_kelamin: 'L',
   },
@@ -39,7 +38,8 @@ const FALLBACK_CHILDREN: Anak[] = [
     nama: 'Aisyah Putri',
     nik: '3201125204230002',
     no_kk: '3201120000000002',
-    nama_ibu: 'Dewi Lestari',
+    nama_pengasuh: 'Dewi Lestari',
+    hubungan_pengasuh: 'ibu',
     tgl_lahir: '2025-04-20',
     jenis_kelamin: 'P',
   },
@@ -50,7 +50,8 @@ const FALLBACK_CHILDREN: Anak[] = [
     nama: 'Bima Sakti',
     nik: '3201121012220003',
     no_kk: '3201120000000003',
-    nama_ibu: 'Nur Hasanah',
+    nama_pengasuh: 'Nur Hasanah',
+    hubungan_pengasuh: 'ibu',
     tgl_lahir: '2024-12-10',
     jenis_kelamin: 'L',
   },
@@ -61,7 +62,8 @@ const FALLBACK_CHILDREN: Anak[] = [
     nama: 'Doni Firmansyah',
     nik: '3201121503230004',
     no_kk: '3201120000000004',
-    nama_ibu: 'Rina Marlina',
+    nama_pengasuh: 'Rina Marlina',
+    hubungan_pengasuh: 'ibu',
     tgl_lahir: '2025-03-15',
     jenis_kelamin: 'L',
   },
@@ -72,7 +74,8 @@ const FALLBACK_CHILDREN: Anak[] = [
     nama: 'Zahra Cantika',
     nik: '3201126501240005',
     no_kk: '3201120000000005',
-    nama_ibu: 'Fitri Handayani',
+    nama_pengasuh: 'Fitri Handayani',
+    hubungan_pengasuh: 'ibu',
     tgl_lahir: '2025-01-25',
     jenis_kelamin: 'P',
   },
@@ -196,7 +199,8 @@ export default function ChildListPage() {
   // Filter balita berdasarkan nama dari search box
   const filteredChildren = childrenList.filter((anak) =>
     anak.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    anak.nama_ibu.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (anak.nama_pengasuh && anak.nama_pengasuh.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (anak.nama_ibu && anak.nama_ibu.toLowerCase().includes(searchQuery.toLowerCase())) ||
     (anak.nik && anak.nik.includes(searchQuery))
   );
 
@@ -208,17 +212,17 @@ export default function ChildListPage() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.push('/kader')}
-              className="w-11 h-11 rounded-full bg-white border-2 border-slate-200 flex items-center justify-center text-slate-700 hover:border-berry transition-colors cursor-pointer"
+              className="w-12 h-12 min-w-[48px] min-h-[48px] rounded-full bg-white border border-border flex items-center justify-center text-text hover:border-primary transition-colors cursor-pointer"
               title="Kembali ke Beranda"
               aria-label="Kembali"
             >
-              <ArrowLeft size={20} />
+              <ChevronLeft size={24} strokeWidth={2} />
             </button>
             <div>
-              <span className="text-[12px] font-bold text-slateTeal uppercase tracking-wider block">
+              <span className="text-[14px] font-bold text-teal uppercase tracking-wider block">
                 Posyandu ILP
               </span>
-              <h1 className="text-xl font-extrabold text-slate-900 leading-tight">
+              <h1 className="text-[24px] font-bold text-text leading-tight">
                 Daftar Balita
               </h1>
             </div>
@@ -235,17 +239,18 @@ export default function ChildListPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari nama balita atau nama ibu..."
-              className="w-full min-h-[54px] px-4 pl-12 text-[16px] font-medium text-slate-900 bg-white border-2 border-slate-200 rounded-2xl focus:border-berry focus:outline-none transition-colors"
+              placeholder="Cari nama balita atau pengasuh..."
+              className="w-full min-h-[56px] px-4 pl-12 text-[16px] font-medium text-text bg-white border border-border rounded-[16px] focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
             />
             <Search
               size={20}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+              strokeWidth={2}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-slate-700"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-[14px] font-bold text-text-muted hover:text-text cursor-pointer"
               >
                 Hapus
               </button>
@@ -255,45 +260,48 @@ export default function ChildListPage() {
 
         {/* Info Jumlah Balita */}
         <div className="flex items-center justify-between px-1 mb-3">
-          <span className="text-[13px] font-bold text-slate-500 uppercase tracking-wider">
+          <span className="text-[14px] font-bold text-text-muted uppercase tracking-wider">
             Total {filteredChildren.length} Balita
           </span>
-          <span className="text-[12px] text-slateTeal font-semibold">
+          <span className="text-[14px] text-teal font-semibold">
             Pilih untuk mulai ukur
           </span>
         </div>
 
         {/* Error Notification */}
         {errorMsg && (
-          <div className="mb-4 p-3 rounded-2xl bg-amber-50 border border-status-yellow/40 text-amber-900 text-[13px] flex items-center gap-2">
-            <AlertCircle size={16} className="text-status-yellow flex-shrink-0" />
+          <div className="mb-4 p-4 rounded-[16px] bg-yellow-light border border-yellow/40 text-text text-[14px] flex items-center gap-2">
+            <TriangleAlert size={20} strokeWidth={2} className="text-yellow flex-shrink-0" />
             <span>{errorMsg} (Menggunakan data cadangan)</span>
           </div>
         )}
 
         {/* List of Large Child Cards */}
         {loading ? (
-          <div className="flex flex-col gap-3 py-8 text-center text-slate-500 text-[15px]">
-            <div className="w-8 h-8 border-3 border-berry border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+          <div className="flex flex-col gap-3 py-8 text-center text-text-muted text-[16px]">
+            <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
             <span>Memuat daftar balita...</span>
           </div>
         ) : filteredChildren.length === 0 ? (
-          <Card padding="lg" className="text-center py-10 my-4">
-            <Baby size={48} className="text-slate-300 mx-auto mb-3" />
-            <h3 className="text-[17px] font-bold text-slate-800 mb-1">
+          <Card padding="24" className="text-center py-10 my-4">
+            <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-text-muted mx-auto mb-3">
+              <User size={32} strokeWidth={2} />
+            </div>
+            <h3 className="text-[20px] font-semibold text-text mb-1">
               Tidak Ada Balita Ditemukan
             </h3>
-            <p className="text-[14px] text-slate-500 mb-5">
+            <p className="text-[16px] text-text-muted mb-6">
               {searchQuery
                 ? `Tidak ada hasil pencarian untuk "${searchQuery}".`
                 : 'Belum ada balita terdaftar di Posyandu ini.'}
             </p>
             <Button
-              variant="secondary"
+              variant="primary"
+              size="kader"
               onClick={() => router.push('/kader/anak/baru')}
-              icon={<UserPlus size={18} />}
+              icon={<UserPlus size={24} strokeWidth={2} />}
             >
-              Daftarkan Balita Baru Sekarang
+              Daftarkan Balita Baru
             </Button>
           </Card>
         ) : (
@@ -305,22 +313,22 @@ export default function ChildListPage() {
               return (
                 <Card
                   key={anak.id}
-                  padding="md"
+                  padding="16"
                   id={`card-anak-${anak.id}`}
-                  className="cursor-pointer hover:border-berry/40 active:scale-[0.99] transition-all group"
+                  className="cursor-pointer hover:border-primary/40 active:scale-[0.99] transition-all group"
                   onClick={() => router.push(`/kader/ukur/${anak.id}`)}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3.5">
                       {/* Avatar Icon with Gender Indicator */}
                       <div
-                        className={`w-13 h-13 rounded-2xl flex items-center justify-center font-extrabold text-lg flex-shrink-0 ${
+                        className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
                           isBoy
-                            ? 'bg-slateTeal-light text-slateTeal'
-                            : 'bg-berry-light text-berry'
+                            ? 'bg-teal-light text-teal'
+                            : 'bg-primary-selected text-primary'
                         }`}
                       >
-                        {isBoy ? '👦' : '👧'}
+                        <User size={24} strokeWidth={2} />
                       </div>
 
                       <div>
@@ -340,9 +348,9 @@ export default function ChildListPage() {
                           </span>
                         </div>
 
-                        {/* Mother's Name */}
-                        <p className="text-[13px] text-slate-500 mt-0.5">
-                          Ibu: <strong className="text-slate-700 font-semibold">{anak.nama_ibu}</strong>
+                        {/* Caregiver Name */}
+                        <p className="text-[14px] text-text-muted mt-0.5">
+                          Pengasuh: <strong className="text-text font-semibold">{anak.nama_pengasuh || anak.nama_ibu}</strong>
                         </p>
                       </div>
                     </div>
@@ -355,7 +363,7 @@ export default function ChildListPage() {
                         <ChevronRight size={20} className="text-slate-300 group-hover:text-berry transition-colors" />
                       </div>
 
-                      {/* Small 'Lihat kurva' button (Requirement: Link to /kader/anak/[anakId]) */}
+                      {/* Small 'Lihat kurva' button */}
                       <button
                         type="button"
                         id={`btn-lihat-kurva-${anak.id}`}
@@ -363,10 +371,10 @@ export default function ChildListPage() {
                           e.stopPropagation();
                           router.push(`/kader/anak/${anak.id}`);
                         }}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slateTeal-light text-slate-700 hover:text-slateTeal text-[12px] font-extrabold border border-slate-200 transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-text text-[14px] font-semibold border border-border transition-colors cursor-pointer"
                         title="Lihat grafik kurva pertumbuhan WHO"
                       >
-                        <TrendingUp size={13} className="text-slateTeal" />
+                        <TrendingUp size={18} strokeWidth={2} className="text-teal" />
                         <span>Lihat kurva</span>
                       </button>
                     </div>
@@ -380,12 +388,13 @@ export default function ChildListPage() {
 
       {/* Fixed Sticky Bottom Action: "Daftarkan balita baru" */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-pageBg via-pageBg/95 to-transparent flex justify-center z-20">
-        <div className="w-full max-w-[420px]">
+        <div className="w-full max-w-[480px]">
           <Button
             id="btn-tambah-balita-baru"
             variant="primary"
+            size="kader"
             onClick={() => router.push('/kader/anak/baru')}
-            icon={<UserPlus size={20} />}
+            icon={<UserPlus size={24} strokeWidth={2} />}
           >
             Daftarkan Balita Baru
           </Button>

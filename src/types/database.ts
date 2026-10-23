@@ -1,8 +1,9 @@
-export type UserRole = 'admin' | 'kader' | 'bidan' | 'kpm' | 'kepala_desa' | 'ibu';
+export type UserRole = 'admin' | 'kader' | 'bidan' | 'kpm' | 'kepala_desa' | 'pengasuh' | 'ibu';
 export type JenisKelamin = 'L' | 'P';
 export type CaraUkur = 'berbaring' | 'berdiri';
 export type StatusGizi = 'hijau' | 'kuning' | 'merah';
 export type StatusRujukan = 'belum' | 'sudah' | 'ada_hasil';
+export type HubunganPengasuh = 'ibu' | 'ayah' | 'nenek_kakek' | 'wali_lain';
 
 export interface Profile {
   id: string;
@@ -31,9 +32,18 @@ export interface Anak {
   nama: string;
   nik: string | null;
   no_kk: string | null;
-  nama_ibu: string;
+  nama_pengasuh: string;
+  hubungan_pengasuh?: HubunganPengasuh;
+  // Backward compatibility alias for existing cached records
+  nama_ibu?: string;
   tgl_lahir: string;
   jenis_kelamin: JenisKelamin;
+}
+
+export interface PengasuhAnak {
+  anak_id: string;
+  user_id: string;
+  hubungan: HubunganPengasuh;
 }
 
 export interface Pengukuran {
@@ -65,8 +75,9 @@ export interface TindakLanjut {
 }
 
 export interface Consent {
-  id: number;
+  id?: number;
   anak_id: string;
   diberikan_oleh: string;
+  hubungan?: HubunganPengasuh;
   versi_teks: string;
 }

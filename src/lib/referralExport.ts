@@ -103,7 +103,7 @@ export async function generateReferralPdf(data: ReferralExportData): Promise<Buf
       ['NIK Balita', `: ${child.nik || '-'}`, 'Posyandu Asal', `: ${posyanduName}`],
       ['Tanggal Lahir / Usia', `: ${formatIndonesianDate(child.tgl_lahir)} (${ageInMonths} Bulan)`, 'Tinggi / Panjang Badan', `: ${pengukuran.tinggi_cm} cm (${pengukuran.cara_ukur})`],
       ['Jenis Kelamin', `: ${genderStr}`, 'Berat Badan', `: ${pengukuran.berat_kg} kg`],
-      ['Nama Ibu Kandung', `: ${child.nama_ibu}`, 'Z-Score TB/U', `: ${tbuStr}`],
+      ['Nama Pengasuh', `: ${child.nama_pengasuh || child.nama_ibu || '-'}`, 'Z-Score TB/U', `: ${tbuStr}`],
       ['Status Skrining', ': INDIKASI STUNTING (MERAH)', 'Z-Score BB/U', `: ${bbuStr}`],
     ],
     columnStyles: {

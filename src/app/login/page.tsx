@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button, Card } from '@/components/ui';
-import { Lock, Mail, AlertCircle, Shield, CheckCircle } from 'lucide-react';
+import { Lock, Mail, TriangleAlert } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -185,9 +185,9 @@ export default function LoginPage() {
 
           {/* Error Banner in Simple Indonesian */}
           {errorMessage && (
-            <div className="p-4 rounded-2xl bg-red-50 border border-status-red/40 flex items-start gap-3 text-red-900 animate-fadeIn">
-              <AlertCircle size={20} className="text-status-red flex-shrink-0 mt-0.5" />
-              <p className="text-[14px] font-semibold leading-snug">
+            <div className="p-4 rounded-[16px] bg-red-light border border-red/40 flex items-start gap-3 text-red animate-fadeIn">
+              <TriangleAlert size={20} strokeWidth={2} className="text-red flex-shrink-0 mt-0.5" aria-hidden="true" />
+              <p className="text-[16px] font-semibold leading-snug">
                 {errorMessage}
               </p>
             </div>

@@ -8,6 +8,7 @@ import { SyncStatusBadge } from '@/components/SyncStatusBadge';
 import { calculateAgeInMonths, formatIndonesianDate } from '@/lib/utils';
 import { Anak, Pengukuran, StatusGizi } from '@/types/database';
 import {
+  ChevronLeft,
   ArrowLeft,
   CheckCircle2,
   AlertTriangle,
@@ -19,6 +20,7 @@ import {
   Utensils,
   LineChart,
   Clock,
+  User,
 } from 'lucide-react';
 import { db, CachedPengukuran } from '@/lib/db';
 import { GrowthCharts } from '@/components/GrowthCharts';
@@ -153,7 +155,8 @@ export default function MeasurementResultPage() {
             nama: 'Rayyan Pratama',
             nik: '3201124508230001',
             no_kk: '3201120000000001',
-            nama_ibu: 'Siti Rahmawati',
+            nama_pengasuh: 'Siti Rahmawati',
+            hubungan_pengasuh: 'ibu',
             tgl_lahir: '2025-08-15',
             jenis_kelamin: 'L',
           };
@@ -486,13 +489,13 @@ export default function MeasurementResultPage() {
               <p className="text-[13px] text-slate-600">
                 Usia: <strong>{ageInMonths} Bulan</strong> ({child.jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan'})
               </p>
-              <p className="text-[12px] text-slate-500">
-                Nama Ibu: {child.nama_ibu}
+              <p className="text-[14px] text-slate-500">
+                Nama Pengasuh: <strong className="text-slate-800">{child.nama_pengasuh || child.nama_ibu}</strong>
               </p>
             </div>
 
-            <div className="w-12 h-12 rounded-2xl bg-berry-light text-berry flex items-center justify-center font-bold text-xl flex-shrink-0 border border-berry/20">
-              {child.jenis_kelamin === 'L' ? '👦' : '👧'}
+            <div className="w-12 h-12 rounded-full bg-primary-selected text-primary flex items-center justify-center font-bold flex-shrink-0 border border-primary/20">
+              <User size={24} strokeWidth={2} />
             </div>
           </div>
 

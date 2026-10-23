@@ -241,9 +241,22 @@ class SyncEngine {
               }
             }
 
+            const dbChildPayload = {
+              id: childPayload.id,
+              desa_id: childPayload.desa_id,
+              posyandu_id: childPayload.posyandu_id,
+              nama: childPayload.nama,
+              nik: childPayload.nik,
+              no_kk: childPayload.no_kk,
+              nama_pengasuh: childPayload.nama_pengasuh || (childPayload as any).nama_ibu,
+              hubungan_pengasuh: childPayload.hubungan_pengasuh || 'ibu',
+              tgl_lahir: childPayload.tgl_lahir,
+              jenis_kelamin: childPayload.jenis_kelamin,
+            };
+
             const { error: anakError } = await supabase
               .from('anak')
-              .upsert(childPayload, { onConflict: 'id', ignoreDuplicates: true });
+              .upsert(dbChildPayload, { onConflict: 'id', ignoreDuplicates: true });
 
             if (anakError) {
               throw anakError;
@@ -253,9 +266,17 @@ class SyncEngine {
             await db.anak_cache.put(childPayload);
             await db.outbox.delete(item.id);
           } else if (item.table === 'consent') {
+            const dbConsentPayload = {
+              id: item.payload.id,
+              anak_id: item.payload.anak_id,
+              diberikan_oleh: item.payload.diberikan_oleh,
+              hubungan: item.payload.hubungan || 'ibu',
+              versi_teks: item.payload.versi_teks,
+            };
+
             const { error: consentError } = await supabase
               .from('consent')
-              .upsert(item.payload, { onConflict: 'id', ignoreDuplicates: true });
+              .upsert(dbConsentPayload, { onConflict: 'id', ignoreDuplicates: true });
 
             if (consentError) {
               throw consentError;

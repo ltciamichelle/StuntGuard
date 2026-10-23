@@ -11,14 +11,14 @@ const FALLBACK_POSYANDU: Posyandu[] = [
 ];
 
 const FALLBACK_CHILDREN: Anak[] = [
-  { id: 'c-1', desa_id: 1, posyandu_id: 1, nama: 'Rayyan Pratama', nik: '3201124508230001', no_kk: null, nama_ibu: 'Siti Rahmawati', tgl_lahir: '2025-08-15', jenis_kelamin: 'L' },
-  { id: 'c-2', desa_id: 1, posyandu_id: 1, nama: 'Aisyah Putri', nik: '3201125510240002', no_kk: null, nama_ibu: 'Nurul Hidayah', tgl_lahir: '2025-04-10', jenis_kelamin: 'P' },
-  { id: 'c-3', desa_id: 1, posyandu_id: 2, nama: 'Muhammad Bilal', nik: '3201121203240003', no_kk: null, nama_ibu: 'Dewi Lestari', tgl_lahir: '2024-11-20', jenis_kelamin: 'L' },
-  { id: 'c-4', desa_id: 1, posyandu_id: 2, nama: 'Khadijah Althafunisa', nik: '3201126701250004', no_kk: null, nama_ibu: 'Fatimah Zahra', tgl_lahir: '2025-01-05', jenis_kelamin: 'P' },
-  { id: 'c-5', desa_id: 1, posyandu_id: 3, nama: 'Kenzo Alvaro', nik: '3201122206240005', no_kk: null, nama_ibu: 'Ratna Sari', tgl_lahir: '2024-06-18', jenis_kelamin: 'L' },
-  { id: 'c-6', desa_id: 1, posyandu_id: 3, nama: 'Naura Salsabila', nik: '3201124409240006', no_kk: null, nama_ibu: 'Indah Permata', tgl_lahir: '2024-09-12', jenis_kelamin: 'P' },
-  { id: 'c-7', desa_id: 1, posyandu_id: 1, nama: 'Fatih Ar-Rasyid', nik: '3201121511240007', no_kk: null, nama_ibu: 'Mega Utami', tgl_lahir: '2024-11-15', jenis_kelamin: 'L' },
-  { id: 'c-8', desa_id: 1, posyandu_id: 2, nama: 'Zahra Humaira', nik: '3201125203250008', no_kk: null, nama_ibu: 'Dian Anggraini', tgl_lahir: '2025-03-22', jenis_kelamin: 'P' },
+  { id: 'c-1', desa_id: 1, posyandu_id: 1, nama: 'Rayyan Pratama', nik: '3201124508230001', no_kk: null, nama_pengasuh: 'Siti Rahmawati', hubungan_pengasuh: 'ibu', tgl_lahir: '2025-08-15', jenis_kelamin: 'L' },
+  { id: 'c-2', desa_id: 1, posyandu_id: 1, nama: 'Aisyah Putri', nik: '3201125510240002', no_kk: null, nama_pengasuh: 'Nurul Hidayah', hubungan_pengasuh: 'ibu', tgl_lahir: '2025-04-10', jenis_kelamin: 'P' },
+  { id: 'c-3', desa_id: 1, posyandu_id: 2, nama: 'Muhammad Bilal', nik: '3201121203240003', no_kk: null, nama_pengasuh: 'Dewi Lestari', hubungan_pengasuh: 'ibu', tgl_lahir: '2024-11-20', jenis_kelamin: 'L' },
+  { id: 'c-4', desa_id: 1, posyandu_id: 2, nama: 'Khadijah Althafunisa', nik: '3201126701250004', no_kk: null, nama_pengasuh: 'Fatimah Zahra', hubungan_pengasuh: 'ibu', tgl_lahir: '2025-01-05', jenis_kelamin: 'P' },
+  { id: 'c-5', desa_id: 1, posyandu_id: 3, nama: 'Kenzo Alvaro', nik: '3201122206240005', no_kk: null, nama_pengasuh: 'Ratna Sari', hubungan_pengasuh: 'ibu', tgl_lahir: '2024-06-18', jenis_kelamin: 'L' },
+  { id: 'c-6', desa_id: 1, posyandu_id: 3, nama: 'Naura Salsabila', nik: '3201124409240006', no_kk: null, nama_pengasuh: 'Indah Permata', hubungan_pengasuh: 'ibu', tgl_lahir: '2024-09-12', jenis_kelamin: 'P' },
+  { id: 'c-7', desa_id: 1, posyandu_id: 1, nama: 'Fatih Ar-Rasyid', nik: '3201121511240007', no_kk: null, nama_pengasuh: 'Mega Utami', hubungan_pengasuh: 'ibu', tgl_lahir: '2024-11-15', jenis_kelamin: 'L' },
+  { id: 'c-8', desa_id: 1, posyandu_id: 2, nama: 'Zahra Humaira', nik: '3201125203250008', no_kk: null, nama_pengasuh: 'Dian Anggraini', hubungan_pengasuh: 'ibu', tgl_lahir: '2025-03-22', jenis_kelamin: 'P' },
 ];
 
 const FALLBACK_MEASUREMENTS: Pengukuran[] = [
@@ -33,7 +33,7 @@ const FALLBACK_MEASUREMENTS: Pengukuran[] = [
 
 const FALLBACK_TINDAK_LANJUT: TindakLanjut[] = [
   { id: 1, pengukuran_id: 'p-1', anak_id: 'c-1', desa_id: 1, posyandu_id: 1, tgl_kunjungan_ulang: '2026-10-24', status_rujukan: 'sudah', catatan: 'Telah dirujuk ke Puskesmas, evaluasi asupan gizi.', selesai: false, updated_at: '2026-10-16T08:00:00Z' },
-  { id: 2, pengukuran_id: 'p-2', anak_id: 'c-2', desa_id: 1, posyandu_id: 1, tgl_kunjungan_ulang: '2026-10-26', status_rujukan: 'belum', catatan: 'Kader mengingatkan ibu untuk PMT protein hewani.', selesai: false, updated_at: '2026-10-18T10:00:00Z' },
+  { id: 2, pengukuran_id: 'p-2', anak_id: 'c-2', desa_id: 1, posyandu_id: 1, tgl_kunjungan_ulang: '2026-10-26', status_rujukan: 'belum', catatan: 'Kader mengingatkan pengasuh untuk PMT protein hewani.', selesai: false, updated_at: '2026-10-18T10:00:00Z' },
   { id: 3, pengukuran_id: 'p-5', anak_id: 'c-5', desa_id: 1, posyandu_id: 3, tgl_kunjungan_ulang: '2026-10-20', status_rujukan: 'ada_hasil', catatan: 'Hasil lab menunjukkan anemia ringan, diberi suplemen zat besi.', selesai: false, updated_at: '2026-10-21T09:00:00Z' },
   { id: 4, pengukuran_id: 'p-6', anak_id: 'c-6', desa_id: 1, posyandu_id: 3, tgl_kunjungan_ulang: '2026-10-28', status_rujukan: 'belum', catatan: 'Konseling pola makan balita dengan keluarga.', selesai: false, updated_at: '2026-10-14T11:00:00Z' },
 ];

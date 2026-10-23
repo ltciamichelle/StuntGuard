@@ -3,11 +3,10 @@
 import React, { useEffect, useState } from 'react';
 import { syncEngine, SyncEngineState } from '@/lib/syncEngine';
 import {
-  Cloud,
-  Check,
+  CloudCheck,
+  CloudOff,
+  CloudAlert,
   RefreshCw,
-  AlertCircle,
-  Clock,
   X,
   Smartphone,
   RotateCcw,
@@ -66,175 +65,185 @@ export const SyncStatusBadge: React.FC<{ className?: string }> = ({ className = 
   return (
     <>
       {/* 4 States Badge (Top Corner, Always Visible) */}
-      <div
+      <button
+        type="button"
         id="sync-status-badge"
         onClick={() => setIsModalOpen(true)}
-        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-bold shadow-sm select-none cursor-pointer transition-all border ${
+        aria-label={`Status sinkronisasi: ${
           syncState.state === 'tersinkron'
-            ? 'bg-emerald-50 border-status-green/40 text-emerald-800 hover:bg-emerald-100'
+            ? 'Tersinkron'
+            : syncState.state === 'mengirim'
+            ? 'Sedang mengirim data'
+            : syncState.state === 'gagal'
+            ? `Gagal kirim ${syncState.failedCount} data`
+            : `Menunggu sinyal ${syncState.pendingCount} data`
+        }`}
+        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[14px] font-bold shadow-soft select-none cursor-pointer transition-all border ${
+          syncState.state === 'tersinkron'
+            ? 'bg-green-light border-green/40 text-green hover:bg-green-100'
             : syncState.state === 'mengirim'
             ? 'bg-sky-50 border-sky-400 text-sky-800 hover:bg-sky-100'
             : syncState.state === 'gagal'
-            ? 'bg-red-50 border-status-red/40 text-red-800 hover:bg-red-100'
-            : 'bg-amber-50 border-status-yellow/50 text-amber-900 hover:bg-amber-100'
+            ? 'bg-red-light border-red/40 text-red hover:bg-red-100'
+            : 'bg-yellow-light border-yellow/50 text-[#9A6F00] hover:bg-yellow-100'
         } ${className}`}
-        title="Ketuk untuk melihat detail sinkronisasi offline"
       >
         {syncState.state === 'tersinkron' ? (
           <>
-            <div className="relative flex items-center justify-center">
-              <Cloud size={16} className="text-status-green" />
-              <Check size={8} className="text-emerald-950 absolute -bottom-0.5 -right-0.5 font-black stroke-[3]" />
-            </div>
+            <CloudCheck size={20} strokeWidth={2} className="text-green flex-shrink-0" />
             <span>Tersinkron</span>
           </>
         ) : syncState.state === 'mengirim' ? (
           <>
-            <RefreshCw size={15} className="text-sky-600 animate-spin" />
+            <RefreshCw size={20} strokeWidth={2} className="text-sky-600 animate-spin flex-shrink-0" />
             <span>Sedang kirim</span>
           </>
         ) : syncState.state === 'gagal' ? (
           <>
-            <AlertCircle size={15} className="text-status-red" />
+            <CloudAlert size={20} strokeWidth={2} className="text-red flex-shrink-0" />
             <span>Gagal kirim ({syncState.failedCount})</span>
-            <button
-              type="button"
+            <span
               id="btn-sync-coba-lagi"
               onClick={(e) => {
                 e.stopPropagation();
                 handleRetryAll();
               }}
-              className="ml-1 px-1.5 py-0.5 rounded bg-status-red text-white text-[10px] font-extrabold hover:bg-red-700"
+              className="ml-1 px-2 py-0.5 rounded-full bg-red text-white text-[12px] font-bold hover:bg-[#c92f32]"
             >
               Coba lagi
-            </button>
+            </span>
           </>
         ) : (
-          /* Menunggu sinyal (yellow, show count) */
+          /* Menunggu sinyal (CloudOff) */
           <>
-            <Clock size={15} className="text-amber-600" />
+            <CloudOff size={20} strokeWidth={2} className="text-[#9A6F00] flex-shrink-0" />
             <span>
               Menunggu sinyal{syncState.pendingCount > 0 ? ` (${syncState.pendingCount})` : ''}
             </span>
           </>
         )}
-      </div>
+      </button>
 
-      {/* Sync Detail Modal / Bottom Sheet */}
+      {/* Sync Detail Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="sync-modal-title"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in"
+        >
           <div
             id="sync-detail-modal"
-            className="w-full max-w-[390px] bg-white rounded-3xl p-5 shadow-2xl border-2 border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto"
+            className="w-full max-w-[400px] bg-white rounded-[24px] p-6 shadow-card border border-border flex flex-col gap-4 max-h-[90vh] overflow-y-auto"
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-berry-light text-berry flex items-center justify-center font-bold">
-                  <Cloud size={18} />
+                <div className="w-10 h-10 rounded-full bg-primary-selected text-primary flex items-center justify-center font-bold">
+                  <CloudCheck size={24} strokeWidth={2} />
                 </div>
                 <div>
-                  <h3 className="text-[16px] font-black text-slate-900">
+                  <h3 id="sync-modal-title" className="text-[18px] font-bold text-text">
                     Status Sinkronisasi
                   </h3>
-                  <span className="text-[12px] text-slate-500 font-medium">
+                  <div className="text-[14px] text-text-muted font-medium flex items-center gap-1 mt-0.5">
                     {typeof navigator !== 'undefined' && navigator.onLine ? (
-                      <span className="text-emerald-600 flex items-center gap-1">
-                        <Wifi size={13} /> Sinyal Terhubung (Online)
+                      <span className="text-green flex items-center gap-1 font-semibold">
+                        <Wifi size={16} strokeWidth={2} /> Sinyal Terhubung (Online)
                       </span>
                     ) : (
-                      <span className="text-amber-600 flex items-center gap-1">
-                        <WifiOff size={13} /> Tanpa Sinyal (Offline)
+                      <span className="text-[#9A6F00] flex items-center gap-1 font-semibold">
+                        <WifiOff size={16} strokeWidth={2} /> Tanpa Sinyal (Offline)
                       </span>
                     )}
-                  </span>
+                  </div>
                 </div>
               </div>
 
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-                aria-label="Tutup"
+                className="w-10 h-10 rounded-full flex items-center justify-center text-text-muted hover:text-text hover:bg-slate-100 transition-colors cursor-pointer"
+                aria-label="Tutup jendela status sinkronisasi"
               >
-                <X size={18} />
+                <X size={20} strokeWidth={2} />
               </button>
             </div>
 
-            {/* Fixed message in simple Indonesian (Rule 5) */}
-            <div className="p-3.5 bg-berry-light/70 border border-berry/20 rounded-2xl flex items-start gap-2.5">
-              <Smartphone size={20} className="text-berry flex-shrink-0 mt-0.5" />
-              <p className="text-[13px] font-bold text-berry leading-relaxed">
-                &ldquo;Data aman di HP ini. Akan dikirim otomatis saat ada sinyal.&rdquo;
+            {/* Fixed message in simple Indonesian */}
+            <div className="p-4 bg-primary-selected border border-primary/20 rounded-[16px] flex items-start gap-3">
+              <Smartphone size={24} strokeWidth={2} className="text-primary flex-shrink-0 mt-0.5" />
+              <p className="text-[16px] font-semibold text-primary leading-relaxed">
+                Data aman di HP ini. Akan dikirim otomatis saat ada sinyal.
               </p>
             </div>
 
             {/* Summary statistics */}
-            <div className="grid grid-cols-2 gap-2 text-center">
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl">
-                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+            <div className="grid grid-cols-2 gap-3 text-center">
+              <div className="p-4 bg-slate-50 border border-border rounded-[16px]">
+                <span className="text-[14px] font-semibold text-text-muted block">
                   Data Tersimpan di HP
                 </span>
-                <span className="text-[18px] font-black text-slate-900 block mt-0.5">
-                  {syncState.totalLocalCount} Balita/Catatan
+                <span className="text-[20px] font-bold text-text block mt-1">
+                  {syncState.totalLocalCount} Catatan
                 </span>
               </div>
 
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl">
-                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+              <div className="p-4 bg-slate-50 border border-border rounded-[16px]">
+                <span className="text-[14px] font-semibold text-text-muted block">
                   Antrean Kirim
                 </span>
                 <span
-                  className={`text-[18px] font-black block mt-0.5 ${
-                    syncState.pendingCount > 0 ? 'text-amber-600' : 'text-emerald-600'
+                  className={`text-[20px] font-bold block mt-1 ${
+                    syncState.pendingCount > 0 ? 'text-[#9A6F00]' : 'text-green'
                   }`}
                 >
-                  {syncState.pendingCount} item
+                  {syncState.pendingCount} data
                 </span>
               </div>
             </div>
 
             {/* Last successful sync time */}
-            <div className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-[12px]">
-              <span className="text-slate-600">Terakhir tersinkron:</span>
-              <span className="font-extrabold text-slate-800">
+            <div className="p-3 bg-slate-50 border border-border rounded-[16px] flex items-center justify-between text-[14px]">
+              <span className="text-text-muted">Terakhir tersinkron:</span>
+              <span className="font-bold text-text">
                 {formatLastSync(syncState.lastSyncTime)}
               </span>
             </div>
 
-            {/* List of failed items with short reason and retry button (Rule 5) */}
+            {/* List of failed items */}
             {syncState.failedItems.length > 0 && (
-              <div className="space-y-2 pt-1 border-t border-slate-100">
+              <div className="flex flex-col gap-2 pt-2 border-t border-border">
                 <div className="flex items-center justify-between">
-                  <span className="text-[12px] font-extrabold text-status-red uppercase tracking-wider">
+                  <span className="text-[14px] font-bold text-red uppercase tracking-wider">
                     Data Gagal Kirim ({syncState.failedItems.length})
                   </span>
                   <button
                     type="button"
                     onClick={handleRetryAll}
-                    className="text-[11px] font-bold text-berry hover:underline flex items-center gap-1 cursor-pointer"
+                    className="text-[14px] font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
                   >
-                    <RotateCcw size={12} /> Coba Ulang Semua
+                    <RotateCcw size={16} strokeWidth={2} /> Coba Ulang Semua
                   </button>
                 </div>
 
-                <div className="space-y-1.5 max-h-[160px] overflow-y-auto">
+                <div className="flex flex-col gap-2 max-h-[160px] overflow-y-auto">
                   {syncState.failedItems.map((item) => (
                     <div
                       key={item.id}
-                      className="p-2.5 bg-red-50/80 border border-red-200 rounded-xl flex items-center justify-between gap-2 text-[12px]"
+                      className="p-3 bg-red-light/60 border border-red/30 rounded-[16px] flex items-center justify-between gap-2 text-[14px]"
                     >
                       <div className="min-w-0 flex-1">
-                        <span className="font-bold text-slate-800 block truncate">
+                        <span className="font-bold text-text block truncate">
                           {item.table === 'anak'
                             ? `Pendaftaran Balita: ${item.payload.nama || 'Baru'}`
                             : item.table === 'pengukuran'
-                            ? `Pengukuran: ${item.payload.berat_kg}kg / ${item.payload.tinggi_cm}cm`
+                            ? `Pengukuran: ${item.payload.berat_kg} kg / ${item.payload.tinggi_cm} cm`
                             : item.table === 'tindak_lanjut'
-                            ? 'Update Tindak Lanjut'
-                            : 'Persetujuan (Consent)'}
+                            ? 'Catatan Tindak Lanjut'
+                            : 'Persetujuan Orang Tua'}
                         </span>
-                        <span className="text-red-700 text-[11px] block truncate">
+                        <span className="text-red text-[13px] block truncate">
                           Alasan: {item.last_error || 'Gagal tersambung ke server'}
                         </span>
                       </div>
@@ -243,7 +252,7 @@ export const SyncStatusBadge: React.FC<{ className?: string }> = ({ className = 
                         type="button"
                         disabled={retryingId === item.id}
                         onClick={() => handleRetryItem(item.id)}
-                        className="px-2.5 py-1 rounded-lg bg-berry hover:bg-berry-hover text-white text-[11px] font-bold flex-shrink-0 cursor-pointer disabled:opacity-50"
+                        className="px-3 py-1.5 rounded-full bg-primary hover:bg-[#8E1F3E] text-white text-[13px] font-bold flex-shrink-0 cursor-pointer disabled:opacity-50"
                       >
                         {retryingId === item.id ? '...' : 'Coba Lagi'}
                       </button>
@@ -257,21 +266,20 @@ export const SyncStatusBadge: React.FC<{ className?: string }> = ({ className = 
             <div className="pt-2 flex flex-col gap-2">
               <Button
                 variant="primary"
-                fullWidth
+                size="kader"
                 id="btn-sync-sekarang"
                 onClick={handleManualSync}
-                className="min-h-[52px] text-[15px] font-bold shadow-md"
               >
                 Sinkronkan Sekarang
               </Button>
 
-              <button
-                type="button"
+              <Button
+                variant="secondary"
+                size="kader"
                 onClick={() => setIsModalOpen(false)}
-                className="py-2.5 text-center text-slate-600 font-bold text-[13px] hover:text-slate-900 transition-colors cursor-pointer"
               >
                 Tutup
-              </button>
+              </Button>
             </div>
           </div>
         </div>

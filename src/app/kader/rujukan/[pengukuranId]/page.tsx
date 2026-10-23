@@ -93,7 +93,8 @@ export default function SuratRujukanPage() {
             nama: 'Rayyan Pratama',
             nik: '3201124508230001',
             no_kk: '3201120000000001',
-            nama_ibu: 'Siti Rahmawati',
+            nama_pengasuh: 'Siti Rahmawati',
+            hubungan_pengasuh: 'ibu',
             tgl_lahir: '2025-08-15',
             jenis_kelamin: 'L',
           };
@@ -297,8 +298,8 @@ export default function SuratRujukanPage() {
                 <td className="px-3 py-1.5">: {child.jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan'}</td>
               </tr>
               <tr>
-                <td className="px-3 py-1.5 text-slate-600">Nama Ibu Kandung</td>
-                <td className="px-3 py-1.5 font-semibold">: {child.nama_ibu}</td>
+                <td className="px-3 py-1.5 text-slate-600">Nama Pengasuh</td>
+                <td className="px-3 py-1.5 font-semibold">: {child.nama_pengasuh || child.nama_ibu}</td>
               </tr>
             </tbody>
           </table>

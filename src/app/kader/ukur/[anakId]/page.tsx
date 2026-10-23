@@ -14,15 +14,18 @@ import {
   DATABASE_LIMITS,
 } from '@/lib/anthropometry';
 import {
-  ArrowLeft,
+  ChevronLeft,
   Scale,
   Ruler,
+  TriangleAlert,
   AlertTriangle,
   RotateCcw,
+  CircleCheck,
   CheckCircle2,
   Delete,
   Radio,
   HelpCircle,
+  User,
 } from 'lucide-react';
 
 import { db, CachedPengukuran } from '@/lib/db';
@@ -108,7 +111,8 @@ export default function MeasurementPage() {
             nama: 'Rayyan Pratama',
             nik: '3201124508230001',
             no_kk: '3201120000000001',
-            nama_ibu: 'Siti Rahmawati',
+            nama_pengasuh: 'Siti Rahmawati',
+            hubungan_pengasuh: 'ibu',
             tgl_lahir: '2025-08-15',
             jenis_kelamin: 'L',
           };
@@ -317,17 +321,17 @@ export default function MeasurementPage() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.push('/kader/anak')}
-              className="w-11 h-11 rounded-full bg-white border-2 border-slate-200 flex items-center justify-center text-slate-700 hover:border-berry hover:text-berry transition-colors cursor-pointer"
+              className="w-12 h-12 min-w-[48px] min-h-[48px] rounded-full bg-white border border-border flex items-center justify-center text-text hover:border-primary hover:text-primary transition-colors cursor-pointer"
               title="Kembali ke Daftar Balita"
               aria-label="Kembali"
             >
-              <ArrowLeft size={20} />
+              <ChevronLeft size={24} strokeWidth={2} />
             </button>
             <div>
-              <span className="text-[11px] font-extrabold text-slateTeal uppercase tracking-wider block">
+              <span className="text-[14px] font-bold text-teal uppercase tracking-wider block">
                 Pencatatan Antropometri
               </span>
-              <h1 className="text-xl font-extrabold text-slate-900 leading-tight">
+              <h1 className="text-[20px] font-bold text-text leading-tight">
                 Pengukuran Balita
               </h1>
             </div>
@@ -337,40 +341,40 @@ export default function MeasurementPage() {
         </header>
 
         {loadingChild ? (
-          <div className="py-16 text-center text-slate-500">
-            <div className="w-9 h-9 border-3 border-berry border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-            <p className="text-[15px] font-medium">Menyiapkan data balita...</p>
+          <div className="py-16 text-center text-text-muted">
+            <div className="w-9 h-9 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-[16px] font-medium">Menyiapkan data balita...</p>
           </div>
         ) : child ? (
           <>
             {/* Header: Child Name and Age in Months */}
-            <Card padding="md" className="border-2 border-slate-200/80 bg-white shadow-soft">
+            <Card padding="16" className="border border-border bg-white shadow-card">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5 mb-0.5">
-                    <span className="text-[11px] font-extrabold text-slateTeal uppercase tracking-wider">
+                    <span className="text-[14px] font-bold text-teal uppercase tracking-wider">
                       Balita Sasaran
                     </span>
-                    <span className="text-[12px] text-slate-400">•</span>
-                    <span className="text-[12px] font-bold text-slate-600">
-                      Ibu: {child.nama_ibu}
+                    <span className="text-[14px] text-text-muted">•</span>
+                    <span className="text-[14px] font-semibold text-text">
+                      Pengasuh: {child.nama_pengasuh || child.nama_ibu}
                     </span>
                   </div>
-                  <h2 className="text-[20px] font-black text-slate-900 truncate leading-snug">
+                  <h2 className="text-[20px] font-bold text-text truncate leading-snug">
                     {child.nama}
                   </h2>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-berry-light text-berry font-extrabold text-[13px]">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary-selected text-primary font-bold text-[14px]">
                       {ageInMonths} Bulan
                     </span>
-                    <span className="text-[13px] text-slate-500 font-medium">
+                    <span className="text-[14px] text-text-muted font-medium">
                       ({child.jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan'})
                     </span>
                   </div>
                 </div>
 
-                <div className="w-13 h-13 rounded-2xl bg-berry-light text-berry flex items-center justify-center font-bold text-2xl flex-shrink-0 border border-berry/20">
-                  {child.jenis_kelamin === 'L' ? '👦' : '👧'}
+                <div className="w-14 h-14 rounded-full bg-primary-selected text-primary flex items-center justify-center font-bold flex-shrink-0 border border-primary/20">
+                  <User size={28} strokeWidth={2} />
                 </div>
               </div>
             </Card>
@@ -379,9 +383,9 @@ export default function MeasurementPage() {
             {errorMessage && (
               <div
                 id="alert-error-message"
-                className="p-3.5 bg-red-50 border-2 border-status-red/40 rounded-2xl flex items-start gap-3 text-red-900 animate-in fade-in duration-200"
+                className="p-4 bg-red-light border-2 border-red/40 rounded-[16px] flex items-start gap-3 text-red animate-in fade-in duration-200"
               >
-                <AlertTriangle className="text-status-red flex-shrink-0 mt-0.5" size={20} />
+                <TriangleAlert className="text-red flex-shrink-0 mt-0.5" size={20} strokeWidth={2} />
                 <div className="text-[14px] flex-1">
                   <p className="font-bold">{errorMessage}</p>
                   <p className="text-[12px] text-red-700 mt-0.5">
@@ -734,8 +738,11 @@ export default function MeasurementPage() {
             </div>
 
             {!isAllowedInDatabase && (
-              <div className="p-2.5 rounded-xl bg-red-50 border border-status-red/30 text-red-800 text-[12px]">
-                ⚠️ <strong>Peringatan Sistem:</strong> Angka ini melampaui batas absolut database (Berat: {DATABASE_LIMITS.minWeight} - {DATABASE_LIMITS.maxWeight} kg, Tinggi: {DATABASE_LIMITS.minHeight} - {DATABASE_LIMITS.maxHeight} cm). Anda harus melakukan pengukuran ulang.
+              <div className="p-3 rounded-[16px] bg-red-light border border-red/30 text-red text-[14px] flex items-start gap-2">
+                <TriangleAlert size={18} strokeWidth={2} className="text-red flex-shrink-0 mt-0.5" />
+                <div>
+                  <strong>Peringatan Sistem:</strong> Angka ini melampaui batas absolut database (Berat: {DATABASE_LIMITS.minWeight} - {DATABASE_LIMITS.maxWeight} kg, Tinggi: {DATABASE_LIMITS.minHeight} - {DATABASE_LIMITS.maxHeight} cm). Anda harus melakukan pengukuran ulang.
+                </div>
               </div>
             )}
 

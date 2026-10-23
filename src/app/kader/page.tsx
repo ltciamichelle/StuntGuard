@@ -7,15 +7,14 @@ import { Card, Button } from '@/components/ui';
 import { SyncStatusBadge } from '@/components/SyncStatusBadge';
 import { 
   UserPlus, 
-  Scale, 
-  AlertCircle, 
+  Ruler, 
+  ClipboardList, 
+  TriangleAlert, 
+  OctagonAlert, 
+  CircleCheck, 
   LogOut, 
   ChevronRight, 
-  Heart,
-  Baby,
-  Calendar,
-  CheckCircle2,
-  X
+  X 
 } from 'lucide-react';
 
 import { db, clearLocalData } from '@/lib/db';
@@ -226,73 +225,82 @@ function KaderHomeContent() {
         {showSavedNotification && !dismissedToast && (
           <div
             id="toast-saved-success"
-            className="mb-4 p-3.5 bg-emerald-50 border-2 border-emerald-300 rounded-2xl flex items-center justify-between gap-3 text-emerald-900 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300"
+            className="mb-4 p-4 bg-green-light border-2 border-green/30 rounded-[24px] flex items-center justify-between gap-3 text-text shadow-card animate-in fade-in slide-in-from-top-2 duration-300"
           >
-            <div className="flex items-center gap-2.5">
-              <CheckCircle2 size={22} className="text-emerald-600 flex-shrink-0" />
+            <div className="flex items-center gap-3">
+              <CircleCheck size={24} strokeWidth={2} className="text-green flex-shrink-0" />
               <div>
-                <p className="text-[14px] font-extrabold leading-tight">
-                  Pengukuran Berhasil Disimpan!
+                <p className="text-[16px] font-bold leading-tight">
+                  Pengukuran Berhasil Disimpan
                 </p>
-                <p className="text-[12px] text-emerald-700 mt-0.5">
+                <p className="text-[16px] text-text-muted mt-0.5">
                   Data balita telah tersimpan dan siap dipantau.
                 </p>
               </div>
             </div>
             <button
               onClick={() => setDismissedToast(true)}
-              className="p-1 rounded-full text-emerald-700 hover:bg-emerald-100 transition-colors"
+              className="p-2 rounded-full text-text-muted hover:bg-slate-100 transition-colors"
               aria-label="Tutup notifikasi"
             >
-              <X size={16} />
+              <X size={20} strokeWidth={2} />
             </button>
           </div>
         )}
 
-        {/* In-app Notice for Synced Offline Measurements with Status Kuning / Merah (Requirement 6) */}
+        {/* In-app Notice for Synced Offline Measurements with Status Kuning / Merah */}
         {stuntingNotices.length > 0 && (
           <div className="mb-4 flex flex-col gap-2">
             {stuntingNotices.map((notice) => (
               <div
                 key={notice.id}
                 id={`notice-stunting-${notice.id}`}
-                className={`p-3.5 rounded-2xl border-2 flex items-start justify-between gap-3 shadow-sm ${
+                className={`p-4 rounded-[24px] border-2 flex items-start justify-between gap-3 shadow-card ${
                   notice.status === 'merah'
-                    ? 'bg-rose-50 border-rose-300 text-rose-950'
-                    : 'bg-amber-50 border-amber-300 text-amber-950'
+                    ? 'bg-red-light border-red/40 text-text'
+                    : 'bg-yellow-light border-yellow/40 text-text'
                 }`}
               >
-                <div className="flex items-start gap-2.5">
-                  <AlertCircle
-                    size={22}
-                    className={`flex-shrink-0 mt-0.5 ${
-                      notice.status === 'merah' ? 'text-rose-600' : 'text-amber-600'
-                    }`}
-                  />
+                <div className="flex items-start gap-3">
+                  {notice.status === 'merah' ? (
+                    <OctagonAlert
+                      size={24}
+                      strokeWidth={2}
+                      className="flex-shrink-0 mt-0.5 text-red"
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <TriangleAlert
+                      size={24}
+                      strokeWidth={2}
+                      className="flex-shrink-0 mt-0.5 text-yellow"
+                      aria-hidden="true"
+                    />
+                  )}
                   <div>
-                    <p className="text-[13px] font-extrabold leading-tight">
+                    <p className="text-[16px] font-bold leading-tight">
                       Hasil Sinkronisasi:{' '}
-                      <span className={notice.status === 'merah' ? 'text-status-red' : 'text-status-yellow'}>
-                        {notice.status === 'merah' ? '🔴 Merah (Perlu Rujukan)' : '🟡 Kuning (Perlu Dipantau)'}
+                      <span className={notice.status === 'merah' ? 'text-red' : 'text-[#9A6F00]'}>
+                        {notice.status === 'merah' ? 'Status Merah (Perlu Rujukan)' : 'Status Kuning (Perlu Dipantau)'}
                       </span>
                     </p>
-                    <p className="text-[12px] mt-0.5 opacity-90">
+                    <p className="text-[16px] text-text-muted mt-0.5">
                       Balita <strong>{notice.childName}</strong> memerlukan tindak lanjut kader.
                     </p>
                     <button
                       onClick={() => router.push('/kader/tindak-lanjut')}
-                      className="mt-2 text-[12px] font-bold underline cursor-pointer"
+                      className="mt-2 text-[16px] font-bold text-primary underline cursor-pointer"
                     >
-                      Buka Daftar Tindak Lanjut →
+                      Buka Daftar Tindak Lanjut
                     </button>
                   </div>
                 </div>
                 <button
                   onClick={() => handleDismissNotice(notice.id)}
-                  className="p-1 rounded-full hover:bg-black/10 transition-colors flex-shrink-0"
+                  className="p-2 rounded-full hover:bg-black/10 transition-colors flex-shrink-0"
                   aria-label="Tutup pemberitahuan"
                 >
-                  <X size={16} />
+                  <X size={20} strokeWidth={2} />
                 </button>
               </div>
             ))}
@@ -301,94 +309,94 @@ function KaderHomeContent() {
 
         {/* Greeting Banner */}
         <div className="mb-6">
-          <p className="text-[14px] text-slateTeal font-bold uppercase tracking-wider">
+          <p className="text-[16px] text-teal font-bold uppercase tracking-wider">
             Selamat Bertugas
           </p>
-          <h1 className="text-2xl font-extrabold text-slate-900 mt-0.5">
+          <h1 className="text-[24px] font-bold text-text mt-0.5">
             Halo, {userName}
           </h1>
-          <p className="text-kader-body text-slate-600 mt-1">
+          <p className="text-[16px] text-text-muted mt-1">
             Pilih tugas pemantauan tumbuh kembang balita hari ini.
           </p>
         </div>
 
-        {/* Three Big Cards (PRD K0 & Requirement 4) */}
+        {/* Three Big Cards */}
         <div className="flex flex-col gap-4">
           {/* Card 1: Registrasi Balita */}
           <Card
             id="card-registrasi-balita"
-            padding="lg"
+            padding="24"
             className="cursor-pointer hover:border-slate-300 active:scale-[0.99] transition-all group"
             onClick={() => router.push('/kader/anak/baru')}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-berry-light text-berry flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0">
-                  <UserPlus size={28} />
+                <div className="w-14 h-14 rounded-full bg-primary-selected text-primary flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0">
+                  <UserPlus size={32} strokeWidth={2} />
                 </div>
                 <div>
-                  <h2 className="text-[18px] font-extrabold text-slate-900 leading-snug">
+                  <h2 className="text-[20px] font-semibold text-text leading-snug">
                     Registrasi Balita
                   </h2>
-                  <p className="text-[14px] text-slate-500 mt-0.5">
-                    Daftar balita baru dengan NIK atau identitas ibu
+                  <p className="text-[16px] text-text-muted mt-0.5">
+                    Daftar balita baru dengan NIK atau identitas pengasuh
                   </p>
                 </div>
               </div>
-              <ChevronRight size={22} className="text-slate-400 group-hover:text-berry transition-colors flex-shrink-0" />
+              <ChevronRight size={24} strokeWidth={2} className="text-text-muted group-hover:text-primary transition-colors flex-shrink-0" />
             </div>
           </Card>
 
           {/* Card 2: Ukur Balita (Tugas Utama Antropometri) */}
           <Card
             id="card-ukur-balita"
-            padding="lg"
-            className="cursor-pointer border-2 border-berry/30 bg-gradient-to-br from-white to-berry-light/20 hover:border-berry active:scale-[0.99] transition-all group shadow-md"
+            padding="24"
+            className="cursor-pointer border-2 border-primary/30 bg-primary-selected/30 hover:border-primary active:scale-[0.99] transition-all group shadow-card"
             onClick={() => router.push('/kader/anak')}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-berry text-white flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0 shadow-md">
-                  <Scale size={28} />
+                <div className="w-14 h-14 rounded-full bg-primary text-white flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0 shadow-soft">
+                  <Ruler size={32} strokeWidth={2} />
                 </div>
                 <div>
-                  <span className="text-[11px] font-extrabold text-berry uppercase tracking-wider block">
-                    ⭐ Tugas Posyandu
+                  <span className="text-[14px] font-bold text-primary uppercase tracking-wider block">
+                    Tugas Posyandu
                   </span>
-                  <h2 className="text-[19px] font-extrabold text-slate-900 leading-snug">
+                  <h2 className="text-[20px] font-semibold text-text leading-snug">
                     Ukur Balita
                   </h2>
-                  <p className="text-[14px] text-slate-600 mt-0.5">
+                  <p className="text-[16px] text-text-muted mt-0.5">
                     Input berat, tinggi badan & hitung Z-Score WHO
                   </p>
                 </div>
               </div>
-              <ChevronRight size={22} className="text-berry transition-colors flex-shrink-0" />
+              <ChevronRight size={24} strokeWidth={2} className="text-primary transition-colors flex-shrink-0" />
             </div>
           </Card>
 
           {/* Card 3: Daftar Tindak Lanjut */}
           <Card
             id="card-tindak-lanjut"
-            padding="lg"
+            padding="24"
             className="cursor-pointer hover:border-slate-300 active:scale-[0.99] transition-all group"
             onClick={() => router.push('/kader/tindak-lanjut')}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-amber-50 text-status-yellow flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0">
-                  <AlertCircle size={28} />
+                <div className="w-14 h-14 rounded-full bg-yellow-light text-yellow flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0">
+                  <ClipboardList size={32} strokeWidth={2} />
                 </div>
                 <div>
-                  <h2 className="text-[18px] font-extrabold text-slate-900 leading-snug">
+                  <h2 className="text-[20px] font-semibold text-text leading-snug">
                     Daftar Tindak Lanjut
                   </h2>
-                  <p className="text-[14px] text-slate-500 mt-0.5">
+                  <p className="text-[16px] text-text-muted mt-0.5">
                     Kasus kuning dan merah butuh pendampingan
                   </p>
                 </div>
               </div>
-              <ChevronRight size={22} className="text-slate-400 group-hover:text-status-yellow transition-colors flex-shrink-0" />
+              <ChevronRight size={24} strokeWidth={2} className="text-text-muted group-hover:text-yellow transition-colors flex-shrink-0" />
             </div>
           </Card>
         </div>
@@ -410,8 +418,8 @@ function KaderHomeContent() {
           aria-modal="true"
         >
           <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-amber-100 text-status-yellow flex items-center justify-center mx-auto mb-4">
-              <AlertCircle size={32} />
+            <div className="w-16 h-16 rounded-full bg-yellow-light text-yellow flex items-center justify-center mx-auto mb-4">
+              <TriangleAlert size={32} strokeWidth={2} />
             </div>
 
             <h3 className="text-lg font-extrabold text-slate-900 mb-2">

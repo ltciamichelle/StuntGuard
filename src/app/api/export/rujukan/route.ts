@@ -104,7 +104,8 @@ export async function GET(request: NextRequest) {
         nama: 'Rayyan Pratama',
         nik: '3201124508230001',
         no_kk: null,
-        nama_ibu: 'Siti Rahmawati',
+        nama_pengasuh: 'Siti Rahmawati',
+        hubungan_pengasuh: 'ibu',
         tgl_lahir: '2025-08-15',
         jenis_kelamin: 'L',
       };
