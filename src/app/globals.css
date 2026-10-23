@@ -4,24 +4,93 @@
 
 :root {
   --font-plus-jakarta: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --color-primary: #A72449;
+  --color-primary-selected: #F9E9ED;
+  --color-teal: #44636D;
+  --color-bg: #FAFAFA;
+  --color-card: #FFFFFF;
+  --color-text: #1F2933;
+  --color-text-muted: #52606D;
+  --color-border: #E4E7EB;
+  --color-green: #22C55E;
+  --color-yellow: #F2B705;
+  --color-red: #E5383B;
 }
 
 body {
   background-color: #FAFAFA;
-  color: #192428;
+  color: #1F2933;
   font-family: var(--font-plus-jakarta);
   -webkit-tap-highlight-color: transparent;
+  font-size: 16px;
+  line-height: 1.5;
 }
 
-/* Base text sizing for Kader screens: at least 16px */
+/* Typography Scale */
+/* Page title: 24px Bold */
+.text-page-title {
+  font-size: 24px;
+  line-height: 1.25;
+  font-weight: 700;
+  color: #1F2933;
+}
+
+/* Section title: 20px SemiBold */
+.text-section-title {
+  font-size: 20px;
+  line-height: 1.3;
+  font-weight: 600;
+  color: #1F2933;
+}
+
+/* Body: 16px */
+.text-body {
+  font-size: 16px;
+  line-height: 1.5;
+  color: #1F2933;
+}
+
+/* Kader screens base body */
 .text-kader-body {
   font-size: 16px;
   line-height: 1.5;
 }
 
-/* Metric numbers: 24px or larger and Bold */
+/* Metric numbers: 24px or larger Bold */
+.text-metric {
+  font-size: 24px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
 .text-kader-metric {
   font-size: 24px;
-  line-height: 1.25;
+  line-height: 1.2;
   font-weight: 700;
+}
+
+/* Dashboard small captions: 14px */
+.text-caption {
+  font-size: 14px;
+  line-height: 1.4;
+  color: #52606D;
+}
+
+/* Safe area padding utilities */
+.pb-safe {
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+.pt-safe {
+  padding-top: max(16px, env(safe-area-inset-top));
+}
+
+/* Visible focus rings on all interactive controls */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #A72449;
+  outline-offset: 2px;
 }

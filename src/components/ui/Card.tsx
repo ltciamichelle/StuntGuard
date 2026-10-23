@@ -3,46 +3,50 @@ import React from 'react';
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   selected?: boolean;
   variant?: 'default' | 'selected' | 'alert-red' | 'warning-yellow' | 'success-green';
-  padding?: 'none' | 'sm' | 'md' | 'lg';
+  padding?: 'none' | '12' | '16' | '24' | '32' | 'sm' | 'md' | 'lg';
 }
 
 export const Card: React.FC<CardProps> = ({
   children,
   selected = false,
   variant = 'default',
-  padding = 'md',
+  padding = '24',
   className = '',
   ...props
 }) => {
-  // Base requirement: Cards white, radius 24px, soft shadow
-  const baseStyles = 'rounded-card transition-all duration-200';
+  // Radius: 24px, Shadow: soft shadow, Border: #E4E7EB
+  const baseStyles = 'rounded-[24px] transition-all duration-200 overflow-hidden';
 
-  const paddingStyles = {
+  // Spacing scale: 4, 8, 12, 16, 24, 32
+  const paddingStyles: Record<string, string> = {
     none: 'p-0',
+    '12': 'p-3',
+    '16': 'p-4',
+    '24': 'p-6',
+    '32': 'p-8',
     sm: 'p-3',
-    md: 'p-5',
+    md: 'p-4',
     lg: 'p-6',
   };
 
-  // Determine variant style
   const effectiveVariant = selected ? 'selected' : variant;
 
   const variantStyles = {
-    // Standard white card
-    default: 'bg-white border border-slate-100 shadow-soft text-slate-800',
-    // Selected state: #F9E9ED
-    selected: 'bg-berry-light border-2 border-berry shadow-soft text-slate-900',
+    // Standard white card: #FFFFFF, border #E4E7EB, soft shadow
+    default: 'bg-card border border-border shadow-card text-text',
+    // Selected state: #F9E9ED, border #A72449
+    selected: 'bg-primary-selected border-2 border-primary shadow-card text-text',
     // Critical alert red: full red background #E5383B
-    'alert-red': 'bg-status-red text-white shadow-alert border-none',
-    // Warning yellow
-    'warning-yellow': 'bg-amber-50 border-2 border-status-yellow text-slate-900',
-    // Success green
-    'success-green': 'bg-emerald-50 border-2 border-status-green text-slate-900',
+    'alert-red': 'bg-red text-white shadow-alert border-none',
+    // Warning yellow: #FEF9C3, border #F2B705
+    'warning-yellow': 'bg-yellow-light border-2 border-yellow text-text',
+    // Success green: #DCFCE7, border #22C55E
+    'success-green': 'bg-green-light border-2 border-green text-text',
   };
 
   return (
     <div
-      className={`${baseStyles} ${paddingStyles[padding]} ${variantStyles[effectiveVariant]} ${className}`}
+      className={`${baseStyles} ${paddingStyles[padding] || 'p-6'} ${variantStyles[effectiveVariant]} ${className}`}
       {...props}
     >
       {children}

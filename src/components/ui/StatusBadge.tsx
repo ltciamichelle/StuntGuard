@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, AlertTriangle, AlertOctagon } from 'lucide-react';
+import { CircleCheck, TriangleAlert, OctagonAlert } from 'lucide-react';
 import { StatusGizi } from '@/types/database';
 
 export interface StatusBadgeProps {
@@ -26,30 +26,56 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
 
   const displayText = label || defaultLabels[status];
 
+  // Sizes: full pill, minimum 16px text on kader screens
   const sizeStyles = {
-    sm: 'text-[13px] px-3 py-1 gap-1.5 font-semibold',
-    md: 'text-[15px] px-4 py-1.5 gap-2 font-bold',
-    lg: 'text-[17px] px-5 py-2.5 gap-2.5 font-bold',
+    sm: 'text-[14px] px-3 py-1 gap-1.5 font-semibold', // dashboard compact
+    md: 'text-[16px] px-4 py-2 gap-2 font-bold', // standard kader
+    lg: 'text-[18px] px-5 py-2.5 gap-2.5 font-bold',
   };
 
   const iconSizes = {
-    sm: 16,
+    sm: 18,
     md: 20,
     lg: 24,
   };
 
+  const iconSize = iconSizes[size];
+
+  // Fixed icon mapping:
+  // hijau = CircleCheck, kuning = TriangleAlert, merah = OctagonAlert
   const statusStyles: Record<StatusGizi, { container: string; icon: React.ReactNode }> = {
     hijau: {
-      container: 'bg-emerald-50 text-emerald-800 border border-status-green/30',
-      icon: <CheckCircle2 size={iconSizes[size]} className="text-status-green flex-shrink-0" />,
+      container: 'bg-green-light text-green border border-green/30',
+      icon: (
+        <CircleCheck
+          size={iconSize}
+          strokeWidth={2}
+          className="text-green flex-shrink-0"
+          aria-hidden="true"
+        />
+      ),
     },
     kuning: {
-      container: 'bg-amber-50 text-amber-900 border border-status-yellow/40',
-      icon: <AlertTriangle size={iconSizes[size]} className="text-status-yellow flex-shrink-0" />,
+      container: 'bg-yellow-light text-[#9A6F00] border border-yellow/40',
+      icon: (
+        <TriangleAlert
+          size={iconSize}
+          strokeWidth={2}
+          className="text-yellow flex-shrink-0"
+          aria-hidden="true"
+        />
+      ),
     },
     merah: {
-      container: 'bg-red-50 text-red-900 border border-status-red/40',
-      icon: <AlertOctagon size={iconSizes[size]} className="text-status-red flex-shrink-0" />,
+      container: 'bg-red-light text-red border border-red/40',
+      icon: (
+        <OctagonAlert
+          size={iconSize}
+          strokeWidth={2}
+          className="text-red flex-shrink-0"
+          aria-hidden="true"
+        />
+      ),
     },
   };
 
@@ -57,6 +83,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
 
   return (
     <span
+      role="status"
       className={`inline-flex items-center rounded-full ${sizeStyles[size]} ${current.container} ${className}`}
     >
       {showIcon && current.icon}
