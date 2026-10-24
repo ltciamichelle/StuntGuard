@@ -33,6 +33,7 @@ export const viewport: Viewport = {
 };
 
 import { PwaRegister } from '@/components/PwaRegister';
+import { SplashScreen } from '@/components/SplashScreen';
 
 export default function RootLayout({
   children,
@@ -49,6 +50,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
       <body className="min-h-screen bg-pageBg font-sans text-slate-800 antialiased flex flex-col items-center">
+        <SplashScreen />
         <PwaRegister />
         {/* Root container: allows desktop dashboards (like /desa up to 1280px) and mobile frames */}
         <div className="w-full min-h-screen flex flex-col items-center bg-pageBg">
