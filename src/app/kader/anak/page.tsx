@@ -201,7 +201,6 @@ export default function ChildListPage() {
   const filteredChildren = childrenList.filter((anak) =>
     anak.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (anak.nama_pengasuh && anak.nama_pengasuh.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (anak.nama_ibu && anak.nama_ibu.toLowerCase().includes(searchQuery.toLowerCase())) ||
     (anak.nik && anak.nik.includes(searchQuery))
   );
 
@@ -349,7 +348,7 @@ export default function ChildListPage() {
 
                         {/* Caregiver Name */}
                         <p className="text-[16px] text-text-muted mt-0.5">
-                          Pengasuh: <strong className="text-text font-semibold">{anak.nama_pengasuh || anak.nama_ibu}</strong>
+                          Pengasuh: <strong className="text-text font-semibold">{anak.nama_pengasuh}</strong>
                         </p>
                       </div>
                     </div>

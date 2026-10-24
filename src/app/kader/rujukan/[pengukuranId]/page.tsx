@@ -352,7 +352,20 @@ export default function SuratRujukanPage() {
               </tr>
               <tr>
                 <td className="px-3 py-1.5 text-slate-600">Nama Pengasuh</td>
-                <td className="px-3 py-1.5 font-semibold">: {child.nama_pengasuh || child.nama_ibu}</td>
+                <td className="px-3 py-1.5 font-semibold">
+                  : {child.nama_pengasuh}{' '}
+                  {child.hubungan_pengasuh && (
+                    <span className="text-slate-500 font-normal">
+                      ({child.hubungan_pengasuh === 'ibu'
+                        ? 'Ibu'
+                        : child.hubungan_pengasuh === 'ayah'
+                        ? 'Ayah'
+                        : child.hubungan_pengasuh === 'nenek_kakek'
+                        ? 'Nenek / Kakek'
+                        : 'Wali Lain'})
+                    </span>
+                  )}
+                </td>
               </tr>
             </tbody>
           </table>

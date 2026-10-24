@@ -95,6 +95,15 @@ export async function generateReferralPdf(data: ReferralExportData): Promise<Buf
   const tbuStr = pengukuran.z_tbu !== null && pengukuran.z_tbu !== undefined ? `${pengukuran.z_tbu > 0 ? '+' : ''}${pengukuran.z_tbu} SD` : '-';
   const bbuStr = pengukuran.z_bbu !== null && pengukuran.z_bbu !== undefined ? `${pengukuran.z_bbu > 0 ? '+' : ''}${pengukuran.z_bbu} SD` : '-';
 
+  const relMap: Record<string, string> = {
+    ibu: 'Ibu',
+    ayah: 'Ayah',
+    nenek_kakek: 'Nenek / Kakek',
+    wali_lain: 'Wali Lain',
+  };
+  const caregiverRel = child.hubungan_pengasuh ? ` (${relMap[child.hubungan_pengasuh] || child.hubungan_pengasuh})` : '';
+  const caregiverFull = `${child.nama_pengasuh || '-'}${caregiverRel}`;
+
   autoTable(doc, {
     startY: 66,
     theme: 'grid',
@@ -103,7 +112,7 @@ export async function generateReferralPdf(data: ReferralExportData): Promise<Buf
       ['NIK Balita', `: ${child.nik || '-'}`, 'Posyandu Asal', `: ${posyanduName}`],
       ['Tanggal Lahir / Usia', `: ${formatIndonesianDate(child.tgl_lahir)} (${ageInMonths} Bulan)`, 'Tinggi / Panjang Badan', `: ${pengukuran.tinggi_cm} cm (${pengukuran.cara_ukur})`],
       ['Jenis Kelamin', `: ${genderStr}`, 'Berat Badan', `: ${pengukuran.berat_kg} kg`],
-      ['Nama Pengasuh', `: ${child.nama_pengasuh || child.nama_ibu || '-'}`, 'Z-Score TB/U', `: ${tbuStr}`],
+      ['Nama Pengasuh', `: ${caregiverFull}`, 'Z-Score TB/U', `: ${tbuStr}`],
       ['Status Skrining', ': INDIKASI STUNTING (MERAH)', 'Z-Score BB/U', `: ${bbuStr}`],
     ],
     columnStyles: {

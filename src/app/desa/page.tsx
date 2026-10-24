@@ -1373,7 +1373,7 @@ export default function DesaDashboardPage() {
                                     {c.nama}
                                   </span>
                                   <span className="text-[12px] text-slate-500 font-normal">
-                                    Usia: {ageInMonths} bln • Pengasuh: {c.nama_pengasuh || c.nama_ibu}
+                                    Usia: {ageInMonths} bln • Pengasuh: {c.nama_pengasuh}
                                   </span>
                                 </div>
                               </div>
@@ -1437,7 +1437,7 @@ export default function DesaDashboardPage() {
                                 {c.nama}
                               </span>
                               <span className="text-[13px] text-slate-600 block mt-0.5">
-                                Usia: {ageInMonths} bln • Pengasuh: {c.nama_pengasuh || c.nama_ibu}
+                                Usia: {ageInMonths} bln • Pengasuh: {c.nama_pengasuh}
                               </span>
                               <span className="text-[12px] font-semibold text-slateTeal block mt-0.5">
                                 {item.posyanduName}
@@ -1525,7 +1525,7 @@ export default function DesaDashboardPage() {
                       {child.nama}
                     </span>
                     <span className="text-[12px] text-slate-600 block mt-0.5">
-                      Pengasuh: {child.nama_pengasuh || child.nama_ibu} • {calculateAgeInMonths(child.tgl_lahir)} Bln
+                      Pengasuh: {child.nama_pengasuh} • {calculateAgeInMonths(child.tgl_lahir)} Bln
                     </span>
                     <span className="text-[11px] font-semibold text-slateTeal block mt-1">
                       {posyanduName}

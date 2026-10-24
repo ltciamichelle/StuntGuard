@@ -462,7 +462,7 @@ export default function TindakLanjutPage() {
         <div className="space-y-4">
           {displayedItems.map((item) => {
             const childName = item.anak?.nama || 'Nama Balita Tidak Dikenal';
-            const caregiverName = item.anak?.nama_pengasuh || item.anak?.nama_ibu || 'Pengasuh Balita';
+            const caregiverName = item.anak?.nama_pengasuh || 'Pengasuh Balita';
             const isPast = isDatePast(item.tgl_kunjungan_ulang);
             const measurementStatus = item.pengukuran?.status || 'kuning';
 
@@ -620,7 +620,7 @@ export default function TindakLanjutPage() {
                   Nama Pengasuh
                 </span>
                 <span className="font-bold text-text text-[18px] block">
-                  {selectedCaregiverItem.anak?.nama_pengasuh || selectedCaregiverItem.anak?.nama_ibu}
+                  {selectedCaregiverItem.anak?.nama_pengasuh || 'Pengasuh Balita'}
                 </span>
                 {selectedCaregiverItem.anak?.hubungan_pengasuh && (
                   <span className="text-[14px] text-teal font-semibold capitalize block mt-0.5">

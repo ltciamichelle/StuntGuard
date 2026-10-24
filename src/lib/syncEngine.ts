@@ -248,7 +248,7 @@ class SyncEngine {
               nama: childPayload.nama,
               nik: childPayload.nik,
               no_kk: childPayload.no_kk,
-              nama_pengasuh: childPayload.nama_pengasuh || (childPayload as any).nama_ibu,
+              nama_pengasuh: childPayload.nama_pengasuh,
               hubungan_pengasuh: childPayload.hubungan_pengasuh || 'ibu',
               tgl_lahir: childPayload.tgl_lahir,
               jenis_kelamin: childPayload.jenis_kelamin,

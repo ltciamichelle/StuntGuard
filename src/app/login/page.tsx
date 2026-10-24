@@ -16,10 +16,11 @@ export default function LoginPage() {
   const supabase = createClient();
 
   // Test account helper profiles for fallback/demo
-  const TEST_PROFILES: Record<string, { nama: string; role: 'kader' | 'bidan'; posyandu: string }> = {
+  const TEST_PROFILES: Record<string, { nama: string; role: 'kader' | 'bidan' | 'pengasuh'; posyandu: string }> = {
     'kader1@test.com': { nama: 'Sri Wahyuni', role: 'kader', posyandu: 'Posyandu Melati 03' },
     'kader2@test.com': { nama: 'Siti Aminah', role: 'kader', posyandu: 'Posyandu Mawar 01' },
     'bidan@test.com': { nama: 'Bdn. Endang Rahayu, S.Tr.Keb', role: 'bidan', posyandu: 'Puskesmas Pembantu Desa' },
+    'pengasuh@test.com': { nama: 'Fatimah Zahra (Pengasuh)', role: 'pengasuh', posyandu: 'Posyandu Melati 01' },
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -98,6 +99,8 @@ export default function LoginPage() {
 
           if (testAccount.role === 'kader') {
             router.push('/kader');
+          } else if (testAccount.role === 'pengasuh') {
+            router.push('/belum-tersedia');
           } else {
             router.push('/desa');
           }
@@ -250,6 +253,18 @@ export default function LoginPage() {
                 <span className="text-text-muted text-[16px]">Bidan Desa • Bdn. Endang Rahayu</span>
               </div>
               <span className="text-teal font-bold text-[16px] ml-2 flex-shrink-0">Gunakan</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSelectQuickAccount('pengasuh@test.com')}
+              className="text-left p-3.5 rounded-2xl bg-white border border-border hover:border-primary text-[16px] flex items-center justify-between transition-colors cursor-pointer min-h-[56px]"
+            >
+              <div>
+                <span className="font-bold text-text block text-[16px]">pengasuh@test.com</span>
+                <span className="text-text-muted text-[16px]">Pengasuh • Fatimah Zahra</span>
+              </div>
+              <span className="text-primary font-bold text-[16px] ml-2 flex-shrink-0">Gunakan</span>
             </button>
           </div>
         </div>

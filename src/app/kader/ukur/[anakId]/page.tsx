@@ -376,7 +376,7 @@ export default function MeasurementPage() {
                   </span>
                   <span className="text-[16px] text-text-muted">•</span>
                   <span className="text-[16px] font-semibold text-text">
-                    Pengasuh: {child.nama_pengasuh || child.nama_ibu}
+                    Pengasuh: {child.nama_pengasuh}
                   </span>
                 </div>
                 <h2 className="text-[22px] font-bold text-text truncate leading-snug">

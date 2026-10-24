@@ -2,7 +2,7 @@ import React from 'react';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'ghost' | 'critical' | 'alert-white' | 'danger' | 'alert-red';
-  size?: 'kader' | 'pengasuh' | 'ibu' | 'compact';
+  size?: 'kader' | 'pengasuh' | 'compact';
   fullWidth?: boolean;
   icon?: React.ReactNode;
   iconPosition?: 'left' | 'right';
@@ -29,7 +29,6 @@ export const Button: React.FC<ButtonProps> = ({
   const sizeStyles = {
     kader: 'min-h-[56px] h-14 px-6 text-[16px] gap-2', // 56px high, 16px text, 8px (gap-2)
     pengasuh: 'min-h-[54px] h-[54px] px-6 text-[16px] gap-2', // 54px high
-    ibu: 'min-h-[54px] h-[54px] px-6 text-[16px] gap-2', // 54px high (alias)
     compact: 'min-h-[44px] h-11 px-4 text-[14px] gap-2', // 44px high (dashboard only)
   };
 

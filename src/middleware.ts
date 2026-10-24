@@ -106,19 +106,36 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (user && isLoginPage) {
-    // If logged in, redirect away from /login
+  if (user) {
     const destination = request.nextUrl.clone();
     const role = (user as any)?.user_metadata?.role || (user as any)?.role || 'kader';
 
-    if (role === 'kader') {
-      destination.pathname = '/kader';
-    } else if (['bidan', 'kpm', 'kepala_desa'].includes(role)) {
-      destination.pathname = '/desa';
-    } else {
-      destination.pathname = '/belum-tersedia';
+    if (isLoginPage) {
+      if (role === 'kader') {
+        destination.pathname = '/kader';
+      } else if (['bidan', 'kpm', 'kepala_desa'].includes(role)) {
+        destination.pathname = '/desa';
+      } else {
+        destination.pathname = '/belum-tersedia';
+      }
+      return NextResponse.redirect(destination);
     }
-    return NextResponse.redirect(destination);
+
+    // Role-based route isolation: role 'pengasuh' goes to /belum-tersedia for now
+    if (role === 'pengasuh' && pathname !== '/belum-tersedia' && !pathname.startsWith('/api')) {
+      destination.pathname = '/belum-tersedia';
+      return NextResponse.redirect(destination);
+    }
+
+    if (pathname.startsWith('/kader') && role !== 'kader') {
+      destination.pathname = ['bidan', 'kpm', 'kepala_desa'].includes(role) ? '/desa' : '/belum-tersedia';
+      return NextResponse.redirect(destination);
+    }
+
+    if (pathname.startsWith('/desa') && !['bidan', 'kpm', 'kepala_desa'].includes(role)) {
+      destination.pathname = role === 'kader' ? '/kader' : '/belum-tersedia';
+      return NextResponse.redirect(destination);
+    }
   }
 
   return response;

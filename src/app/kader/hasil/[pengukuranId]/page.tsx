@@ -457,7 +457,7 @@ export default function MeasurementResultPage() {
               Usia: <strong className="text-slate-900">{ageInMonths} Bulan</strong> ({child.jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan'})
             </p>
             <p className="text-[16px] text-slate-600 mt-0.5">
-              Pengasuh: <strong className="text-slate-900">{child.nama_pengasuh || child.nama_ibu}</strong>
+              Pengasuh: <strong className="text-slate-900">{child.nama_pengasuh}</strong>
             </p>
           </div>
 

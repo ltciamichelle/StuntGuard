@@ -262,7 +262,7 @@ export default function ChildDetailPage() {
 
   const ageInMonths = calculateAgeInMonths(child.tgl_lahir);
   const isBoy = child.jenis_kelamin === 'L';
-  const caregiverName = child.nama_pengasuh || child.nama_ibu || 'Pengasuh';
+  const caregiverName = child.nama_pengasuh || 'Pengasuh';
 
   return (
     <div className="min-h-screen px-4 py-5 flex flex-col justify-between max-w-[480px] mx-auto w-full pb-36">
@@ -456,7 +456,7 @@ export default function ChildDetailPage() {
               loading={loadingCode}
               onClick={handleBuatKodeTautan}
             >
-              Buat kode tautan
+              Buat kode
             </Button>
           )}
         </Card>

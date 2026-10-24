@@ -158,8 +158,6 @@ export default function RegisterChildPage() {
         no_kk: noKk.trim() ? noKk.trim() : null,
         nama_pengasuh: namaPengasuh.trim(),
         hubungan_pengasuh: hubunganPengasuh,
-        // Backward-compat alias
-        nama_ibu: namaPengasuh.trim(),
         tgl_lahir: tglLahir,
         jenis_kelamin: jenisKelamin,
       };
