@@ -204,13 +204,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleSelectQuickAccount = (accEmail: string) => {
-    setAuthMode('masuk');
-    setEmail(accEmail);
-    setPassword('password123');
-    setErrorMessage('');
-  };
-
   return (
     <main className="min-h-screen px-4 py-6 flex flex-col justify-between max-w-[480px] mx-auto w-full">
       {/* Top Brand Section */}
@@ -376,86 +369,6 @@ export default function LoginPage() {
             </Button>
           </div>
         </form>
-
-        {/* Quick Test Accounts Helper */}
-        <div className="pt-6 border-t border-border">
-          <p className="text-[16px] font-bold text-text-muted uppercase tracking-wider text-center mb-3">
-            Pilih Akun Uji Coba
-          </p>
-          <div className="flex flex-col gap-2.5">
-            <button
-              type="button"
-              onClick={() => handleSelectQuickAccount('kader1@test.com')}
-              className="text-left p-3.5 rounded-2xl bg-white border border-border hover:border-primary text-[16px] flex items-center justify-between transition-colors cursor-pointer min-h-[56px]"
-            >
-              <div>
-                <span className="font-bold text-text block text-[16px]">kader1@test.com</span>
-                <span className="text-text-muted text-[16px]">Kader Sri Wahyuni • Posyandu Melati 03</span>
-              </div>
-              <span className="text-primary font-bold text-[16px] ml-2 flex-shrink-0">Gunakan</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleSelectQuickAccount('bidan@test.com')}
-              className="text-left p-3.5 rounded-2xl bg-white border border-border hover:border-teal text-[16px] flex items-center justify-between transition-colors cursor-pointer min-h-[56px]"
-            >
-              <div>
-                <span className="font-bold text-text block text-[16px]">bidan@test.com</span>
-                <span className="text-text-muted text-[16px]">Bidan Desa • Bdn. Endang Rahayu</span>
-              </div>
-              <span className="text-teal font-bold text-[16px] ml-2 flex-shrink-0">Gunakan</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleSelectQuickAccount('pengasuh@test.com')}
-              className="text-left p-3.5 rounded-2xl bg-white border border-border hover:border-primary text-[16px] flex items-center justify-between transition-colors cursor-pointer min-h-[56px]"
-            >
-              <div>
-                <span className="font-bold text-text block text-[16px]">pengasuh@test.com</span>
-                <span className="text-text-muted text-[16px]">Pengasuh • Fatimah Zahra</span>
-              </div>
-              <span className="text-primary font-bold text-[16px] ml-2 flex-shrink-0">Gunakan</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleSelectQuickAccount('ayah@test.com')}
-              className="text-left p-3.5 rounded-2xl bg-white border border-border hover:border-primary text-[16px] flex items-center justify-between transition-colors cursor-pointer min-h-[56px]"
-            >
-              <div>
-                <span className="font-bold text-text block text-[16px]">ayah@test.com</span>
-                <span className="text-text-muted text-[16px]">Pengasuh (Ayah) • Budi Santoso</span>
-              </div>
-              <span className="text-primary font-bold text-[16px] ml-2 flex-shrink-0">Gunakan</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleSelectQuickAccount('nenek@test.com')}
-              className="text-left p-3.5 rounded-2xl bg-white border border-border hover:border-primary text-[16px] flex items-center justify-between transition-colors cursor-pointer min-h-[56px]"
-            >
-              <div>
-                <span className="font-bold text-text block text-[16px]">nenek@test.com</span>
-                <span className="text-text-muted text-[16px]">Pengasuh (Nenek) • Nenek Aminah</span>
-              </div>
-              <span className="text-primary font-bold text-[16px] ml-2 flex-shrink-0">Gunakan</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleSelectQuickAccount('pengasuh_baru@test.com')}
-              className="text-left p-3.5 rounded-2xl bg-white border border-dashed border-border hover:border-primary text-[16px] flex items-center justify-between transition-colors cursor-pointer min-h-[56px]"
-            >
-              <div>
-                <span className="font-bold text-text block text-[16px]">pengasuh_baru@test.com</span>
-                <span className="text-text-muted text-[16px]">Pengasuh Baru (Belum Tautkan Anak)</span>
-              </div>
-              <span className="text-primary font-bold text-[16px] ml-2 flex-shrink-0">Gunakan</span>
-            </button>
-          </div>
-        </div>
       </div>
 
       {/* Footer Info */}
