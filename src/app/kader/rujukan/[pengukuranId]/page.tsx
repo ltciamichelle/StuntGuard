@@ -6,7 +6,8 @@ import { createClient } from '@/lib/supabase/client';
 import { Anak, Pengukuran } from '@/types/database';
 import { calculateAgeInMonths, formatIndonesianDate } from '@/lib/utils';
 import { ArrowLeft, Printer, Download, FileDown } from 'lucide-react';
-import { Button } from '@/components/ui';
+import { Card, Button, BottomActionBar, ErrorState, Skeleton } from '@/components/ui';
+import { SyncStatusBadge } from '@/components/SyncStatusBadge';
 
 export default function SuratRujukanPage() {
   const params = useParams();
@@ -18,122 +19,124 @@ export default function SuratRujukanPage() {
   const [child, setChild] = useState<Anak | null>(null);
   const [kaderName, setKaderName] = useState<string>('Kader Posyandu');
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
-  useEffect(() => {
-    async function loadData() {
-      setLoading(true);
-      try {
-        const isRealSupabase =
-          process.env.NEXT_PUBLIC_SUPABASE_URL &&
-          !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project') &&
-          !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
+  const loadData = async () => {
+    if (!pengukuranId) return;
+    setLoading(true);
+    setLoadError(false);
+    try {
+      const isRealSupabase =
+        process.env.NEXT_PUBLIC_SUPABASE_URL &&
+        !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project') &&
+        !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
 
-        let foundP: Pengukuran | null = null;
-        let foundC: Anak | null = null;
+      let foundP: Pengukuran | null = null;
+      let foundC: Anak | null = null;
 
-        if (isRealSupabase) {
-          const { data: pData } = await supabase
-            .from('pengukuran')
+      if (isRealSupabase) {
+        const { data: pData } = await supabase
+          .from('pengukuran')
+          .select('*')
+          .eq('id', pengukuranId)
+          .single();
+
+        if (pData) {
+          foundP = pData;
+          const { data: cData } = await supabase
+            .from('anak')
             .select('*')
-            .eq('id', pengukuranId)
+            .eq('id', pData.anak_id)
             .single();
-
-          if (pData) {
-            foundP = pData;
-            const { data: cData } = await supabase
-              .from('anak')
-              .select('*')
-              .eq('id', pData.anak_id)
-              .single();
-            if (cData) foundC = cData;
-          }
+          if (cData) foundC = cData;
         }
-
-        // LocalStorage fallback
-        if (!foundP) {
-          const localP = localStorage.getItem('sg_local_pengukuran');
-          if (localP) {
-            const list: Pengukuran[] = JSON.parse(localP);
-            foundP = list.find((item) => item.id === pengukuranId) || null;
-          }
-        }
-
-        if (foundP && !foundC) {
-          const localC = localStorage.getItem('sg_local_anak');
-          if (localC) {
-            const list: Anak[] = JSON.parse(localC);
-            foundC = list.find((item) => item.id === foundP?.anak_id) || null;
-          }
-        }
-
-        // Fallback dummy
-        if (!foundP) {
-          foundP = {
-            id: pengukuranId,
-            anak_id: 'demo-anak',
-            desa_id: 1,
-            posyandu_id: 1,
-            tgl_ukur: new Date().toISOString().split('T')[0],
-            berat_kg: 8.4,
-            tinggi_cm: 68.2,
-            cara_ukur: 'berbaring',
-            berat_manual: true,
-            z_tbu: -3.2,
-            z_bbu: -2.8,
-            status: 'merah',
-          };
-        }
-
-        if (!foundC) {
-          foundC = {
-            id: foundP.anak_id,
-            desa_id: 1,
-            posyandu_id: 1,
-            nama: 'Rayyan Pratama',
-            nik: '3201124508230001',
-            no_kk: '3201120000000001',
-            nama_pengasuh: 'Siti Rahmawati',
-            hubungan_pengasuh: 'ibu',
-            tgl_lahir: '2025-08-15',
-            jenis_kelamin: 'L',
-          };
-        }
-
-        if (isRealSupabase) {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('nama')
-              .eq('id', user.id)
-              .single();
-            if (profile?.nama) setKaderName(profile.nama);
-          }
-        } else {
-          const cookieMatch = document.cookie
-            .split('; ')
-            .find((row) => row.startsWith('sg_dev_session='));
-          if (cookieMatch) {
-            try {
-              const session = JSON.parse(decodeURIComponent(cookieMatch.split('=')[1]));
-              if (session.nama) setKaderName(session.nama);
-            } catch {}
-          }
-        }
-
-        setPengukuran(foundP);
-        setChild(foundC);
-      } catch (e) {
-        console.error('Error loading referral letter data:', e);
-      } finally {
-        setLoading(false);
       }
-    }
 
-    if (pengukuranId) {
-      loadData();
+      // LocalStorage fallback
+      if (!foundP) {
+        const localP = localStorage.getItem('sg_local_pengukuran');
+        if (localP) {
+          const list: Pengukuran[] = JSON.parse(localP);
+          foundP = list.find((item) => item.id === pengukuranId) || null;
+        }
+      }
+
+      if (foundP && !foundC) {
+        const localC = localStorage.getItem('sg_local_anak');
+        if (localC) {
+          const list: Anak[] = JSON.parse(localC);
+          foundC = list.find((item) => item.id === foundP?.anak_id) || null;
+        }
+      }
+
+      // Fallback dummy
+      if (!foundP) {
+        foundP = {
+          id: pengukuranId,
+          anak_id: 'demo-anak',
+          desa_id: 1,
+          posyandu_id: 1,
+          tgl_ukur: new Date().toISOString().split('T')[0],
+          berat_kg: 8.4,
+          tinggi_cm: 68.2,
+          cara_ukur: 'berbaring',
+          berat_manual: true,
+          z_tbu: -3.2,
+          z_bbu: -2.8,
+          status: 'merah',
+        };
+      }
+
+      if (!foundC) {
+        foundC = {
+          id: foundP.anak_id,
+          desa_id: 1,
+          posyandu_id: 1,
+          nama: 'Rayyan Pratama',
+          nik: '3201124508230001',
+          no_kk: '3201120000000001',
+          nama_pengasuh: 'Siti Rahmawati',
+          hubungan_pengasuh: 'ibu',
+          tgl_lahir: '2025-08-15',
+          jenis_kelamin: 'L',
+        };
+      }
+
+      if (isRealSupabase) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('nama')
+            .eq('id', user.id)
+            .single();
+          if (profile?.nama) setKaderName(profile.nama);
+        }
+      } else {
+        const cookieMatch = document.cookie
+          .split('; ')
+          .find((row) => row.startsWith('sg_dev_session='));
+        if (cookieMatch) {
+          try {
+            const session = JSON.parse(decodeURIComponent(cookieMatch.split('=')[1]));
+            if (session.nama) setKaderName(session.nama);
+          } catch {}
+        }
+      }
+
+      setPengukuran(foundP);
+      setChild(foundC);
+    } catch (e) {
+      console.error('Error loading referral letter data:', e);
+      setLoadError(true);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    loadData();
   }, [pengukuranId]);
 
   const handleDownloadPdf = async () => {
@@ -175,19 +178,67 @@ export default function SuratRujukanPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen px-4 py-16 flex items-center justify-center text-slate-500">
-        Menyiapkan berkas surat rujukan...
+      <div className="min-h-screen px-4 py-5 pb-36 max-w-[480px] mx-auto w-full select-none space-y-6">
+        <header className="flex items-center justify-between pb-3 border-b border-border">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push(`/kader/hasil/${pengukuranId}`)}
+              className="w-12 h-12 min-w-[48px] min-h-[48px] rounded-full bg-white border border-border flex items-center justify-center text-text hover:border-primary hover:text-primary transition-colors cursor-pointer"
+              title="Kembali"
+              aria-label="Kembali"
+            >
+              <ArrowLeft size={24} strokeWidth={2} />
+            </button>
+            <div>
+              <span className="text-[16px] font-bold text-teal uppercase tracking-wider block">
+                Dokumen Rujukan
+              </span>
+              <h1 className="text-[22px] font-bold text-text leading-tight">
+                Surat Rujukan Balita
+              </h1>
+            </div>
+          </div>
+          <SyncStatusBadge />
+        </header>
+
+        <div className="p-6 rounded-[20px] border border-border bg-white shadow-card space-y-4">
+          <Skeleton height="36px" width="70%" />
+          <Skeleton height="24px" width="50%" />
+          <div className="space-y-2 pt-4">
+            <Skeleton height="20px" width="100%" />
+            <Skeleton height="20px" width="90%" />
+            <Skeleton height="20px" width="95%" />
+          </div>
+          <div className="pt-6">
+            <Skeleton height="56px" rounded="rounded-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen px-4 py-8 max-w-[480px] mx-auto w-full">
+        <ErrorState
+          title="Gagal Memuat Surat Rujukan"
+          description="Terjadi kendala saat membaca data rujukan balita. Silakan coba lagi."
+          actionText="Coba lagi"
+          onAction={() => loadData()}
+        />
       </div>
     );
   }
 
   if (!pengukuran || !child) {
     return (
-      <div className="min-h-screen px-4 py-8 text-center max-w-[420px] mx-auto">
-        <p className="text-slate-700 font-bold mb-3">Data rujukan tidak ditemukan.</p>
-        <Button variant="secondary" onClick={() => router.push('/kader')}>
-          Kembali ke Beranda Kader
-        </Button>
+      <div className="min-h-screen px-4 py-8 max-w-[480px] mx-auto w-full text-center">
+        <Card padding="lg" className="space-y-4">
+          <p className="text-text font-bold text-[18px]">Data rujukan tidak ditemukan.</p>
+          <Button variant="primary" size="kader" onClick={() => router.push('/kader')}>
+            Kembali ke Beranda Kader
+          </Button>
+        </Card>
       </div>
     );
   }
@@ -195,40 +246,42 @@ export default function SuratRujukanPage() {
   const ageInMonths = calculateAgeInMonths(child.tgl_lahir);
 
   return (
-    <div className="min-h-screen bg-slate-100 py-6 px-3 flex flex-col items-center print:bg-white print:p-0">
+    <div className="min-h-screen bg-slate-100 py-6 px-3 flex flex-col items-center print:bg-white print:p-0 pb-44">
       {/* On-screen Action Toolbar (Hidden during print) */}
-      <div className="w-full max-w-[650px] mb-4 flex items-center justify-between print:hidden gap-2">
-        <button
-          onClick={() => router.push(`/kader/hasil/${pengukuranId}`)}
-          className="px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-berry text-[13px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-        >
-          <ArrowLeft size={16} />
-          Kembali
-        </button>
+      <div className="w-full max-w-[650px] mb-4 print:hidden">
+        <header className="flex items-center justify-between pb-3 border-b border-slate-200 bg-white p-4 rounded-2xl shadow-xs">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push(`/kader/hasil/${pengukuranId}`)}
+              className="w-12 h-12 min-w-[48px] min-h-[48px] rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:border-primary hover:text-primary transition-colors cursor-pointer"
+              title="Kembali ke Hasil Pengukuran"
+              aria-label="Kembali"
+            >
+              <ArrowLeft size={24} strokeWidth={2} />
+            </button>
+            <div>
+              <span className="text-[14px] font-bold text-teal uppercase tracking-wider block">
+                Dokumen Resmi
+              </span>
+              <h1 className="text-[20px] font-bold text-slate-900 leading-tight">
+                Surat Rujukan Posyandu
+              </h1>
+            </div>
+          </div>
 
-        <div className="flex items-center gap-2">
-          {/* Download Official A4 PDF */}
-          <button
-            type="button"
-            id="btn-unduh-surat-rujukan-pdf"
-            onClick={handleDownloadPdf}
-            disabled={downloading}
-            className="px-4 py-2.5 rounded-xl bg-slateTeal hover:bg-slateTeal-dark text-white text-[13px] font-extrabold flex items-center gap-2 shadow-md transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50"
-          >
-            <Download size={16} />
-            <span>{downloading ? 'Mengunduh...' : 'Unduh Surat Rujukan (PDF)'}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="px-3 py-2.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-[13px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-            title="Cetak langsung melalui browser"
-          >
-            <Printer size={16} />
-            <span className="hidden sm:inline">Cetak</span>
-          </button>
-        </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="min-h-[48px] px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-[15px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+              title="Cetak langsung melalui printer"
+            >
+              <Printer size={18} />
+              <span className="hidden sm:inline">Cetak</span>
+            </button>
+            <SyncStatusBadge />
+          </div>
+        </header>
       </div>
 
       {/* Printable Sheet (Standard A4 / Letter format) */}
@@ -372,6 +425,33 @@ export default function SuratRujukanPage() {
           </div>
         </div>
       </div>
+
+      {/* Sticky BottomActionBar (Hidden during print) */}
+      <BottomActionBar className="print:hidden">
+        <div className="flex flex-col gap-2.5 w-full">
+          <Button
+            variant="secondary"
+            size="kader"
+            fullWidth
+            onClick={() => router.push(`/kader/hasil/${pengukuranId}`)}
+          >
+            Kembali ke Hasil Pengukuran
+          </Button>
+
+          <Button
+            variant="primary"
+            size="kader"
+            fullWidth
+            id="btn-unduh-surat-rujukan-pdf"
+            icon={<Download size={20} />}
+            loading={downloading}
+            onClick={handleDownloadPdf}
+            className="shadow-md"
+          >
+            Unduh Surat Rujukan (PDF)
+          </Button>
+        </div>
+      </BottomActionBar>
     </div>
   );
 }

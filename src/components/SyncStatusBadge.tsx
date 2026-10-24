@@ -78,7 +78,7 @@ export const SyncStatusBadge: React.FC<{ className?: string }> = ({ className = 
             ? `Gagal kirim ${syncState.failedCount} data`
             : `Menunggu sinyal ${syncState.pendingCount} data`
         }`}
-        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[14px] font-bold shadow-soft select-none cursor-pointer transition-all border ${
+        className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-[15px] font-bold shadow-soft select-none cursor-pointer transition-all border min-h-[44px] ${
           syncState.state === 'tersinkron'
             ? 'bg-green-light border-green/40 text-green hover:bg-green-100'
             : syncState.state === 'mengirim'
@@ -108,7 +108,7 @@ export const SyncStatusBadge: React.FC<{ className?: string }> = ({ className = 
                 e.stopPropagation();
                 handleRetryAll();
               }}
-              className="ml-1 px-2 py-0.5 rounded-full bg-red text-white text-[12px] font-bold hover:bg-[#c92f32]"
+              className="ml-1 px-2.5 py-1 rounded-full bg-red text-white text-[13px] font-bold hover:bg-[#c92f32]"
             >
               Coba lagi
             </span>
@@ -134,26 +134,26 @@ export const SyncStatusBadge: React.FC<{ className?: string }> = ({ className = 
         >
           <div
             id="sync-detail-modal"
-            className="w-full max-w-[400px] bg-white rounded-[24px] p-6 shadow-card border border-border flex flex-col gap-4 max-h-[90vh] overflow-y-auto"
+            className="w-full max-w-[420px] bg-white rounded-[24px] p-6 shadow-card border border-border flex flex-col gap-4 max-h-[90vh] overflow-y-auto"
           >
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-3 border-b border-border">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-primary-selected text-primary flex items-center justify-center font-bold">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-primary-selected text-primary flex items-center justify-center font-bold flex-shrink-0">
                   <CloudCheck size={24} strokeWidth={2} />
                 </div>
                 <div>
-                  <h3 id="sync-modal-title" className="text-[18px] font-bold text-text">
+                  <h3 id="sync-modal-title" className="text-[20px] font-bold text-text leading-tight">
                     Status Sinkronisasi
                   </h3>
-                  <div className="text-[14px] text-text-muted font-medium flex items-center gap-1 mt-0.5">
+                  <div className="text-[15px] text-text-muted font-medium flex items-center gap-1.5 mt-0.5">
                     {typeof navigator !== 'undefined' && navigator.onLine ? (
                       <span className="text-green flex items-center gap-1 font-semibold">
-                        <Wifi size={16} strokeWidth={2} /> Sinyal Terhubung (Online)
+                        <Wifi size={16} strokeWidth={2} /> Tersambung internet
                       </span>
                     ) : (
                       <span className="text-[#9A6F00] flex items-center gap-1 font-semibold">
-                        <WifiOff size={16} strokeWidth={2} /> Tanpa Sinyal (Offline)
+                        <WifiOff size={16} strokeWidth={2} /> Tanpa internet
                       </span>
                     )}
                   </div>
@@ -181,20 +181,20 @@ export const SyncStatusBadge: React.FC<{ className?: string }> = ({ className = 
             {/* Summary statistics */}
             <div className="grid grid-cols-2 gap-3 text-center">
               <div className="p-4 bg-slate-50 border border-border rounded-[16px]">
-                <span className="text-[14px] font-semibold text-text-muted block">
+                <span className="text-[16px] font-semibold text-text-muted block">
                   Data Tersimpan di HP
                 </span>
-                <span className="text-[20px] font-bold text-text block mt-1">
+                <span className="text-[24px] font-bold text-text block mt-1">
                   {syncState.totalLocalCount} Catatan
                 </span>
               </div>
 
               <div className="p-4 bg-slate-50 border border-border rounded-[16px]">
-                <span className="text-[14px] font-semibold text-text-muted block">
+                <span className="text-[16px] font-semibold text-text-muted block">
                   Antrean Kirim
                 </span>
                 <span
-                  className={`text-[20px] font-bold block mt-1 ${
+                  className={`text-[24px] font-bold block mt-1 ${
                     syncState.pendingCount > 0 ? 'text-[#9A6F00]' : 'text-green'
                   }`}
                 >
@@ -204,7 +204,7 @@ export const SyncStatusBadge: React.FC<{ className?: string }> = ({ className = 
             </div>
 
             {/* Last successful sync time */}
-            <div className="p-3 bg-slate-50 border border-border rounded-[16px] flex items-center justify-between text-[14px]">
+            <div className="p-3 bg-slate-50 border border-border rounded-[16px] flex items-center justify-between text-[16px]">
               <span className="text-text-muted">Terakhir tersinkron:</span>
               <span className="font-bold text-text">
                 {formatLastSync(syncState.lastSyncTime)}
@@ -215,15 +215,15 @@ export const SyncStatusBadge: React.FC<{ className?: string }> = ({ className = 
             {syncState.failedItems.length > 0 && (
               <div className="flex flex-col gap-2 pt-2 border-t border-border">
                 <div className="flex items-center justify-between">
-                  <span className="text-[14px] font-bold text-red uppercase tracking-wider">
+                  <span className="text-[16px] font-bold text-red uppercase tracking-wider">
                     Data Gagal Kirim ({syncState.failedItems.length})
                   </span>
                   <button
                     type="button"
                     onClick={handleRetryAll}
-                    className="text-[14px] font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                    className="text-[16px] font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
                   >
-                    <RotateCcw size={16} strokeWidth={2} /> Coba Ulang Semua
+                    <RotateCcw size={18} strokeWidth={2} /> Coba Ulang Semua
                   </button>
                 </div>
 

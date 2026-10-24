@@ -293,18 +293,18 @@ export function GrowthCharts({
   return (
     <div className={`space-y-4 ${className}`}>
       {/* Tab Switcher: TB/U vs BB/U */}
-      <div className="flex items-center p-1 bg-slate-100 rounded-2xl border border-slate-200">
+      <div className="flex items-center p-1.5 bg-slate-100 rounded-2xl border border-slate-200">
         <button
           type="button"
           id="btn-tab-tbu"
           onClick={() => setActiveChart('tbu')}
-          className={`flex-1 py-2.5 px-3 rounded-xl text-[13px] font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`flex-1 min-h-[48px] py-2.5 px-3 rounded-xl text-[16px] font-bold transition-all flex items-center justify-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
             activeChart === 'tbu'
               ? 'bg-white text-slate-900 shadow-sm'
-              : 'text-slate-500 hover:text-slate-900'
+              : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          <Ruler size={16} className={activeChart === 'tbu' ? 'text-berry' : ''} />
+          <Ruler size={18} className={activeChart === 'tbu' ? 'text-primary' : ''} />
           <span>Tinggi / Umur (TB/U)</span>
         </button>
 
@@ -312,13 +312,13 @@ export function GrowthCharts({
           type="button"
           id="btn-tab-bbu"
           onClick={() => setActiveChart('bbu')}
-          className={`flex-1 py-2.5 px-3 rounded-xl text-[13px] font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`flex-1 min-h-[48px] py-2.5 px-3 rounded-xl text-[16px] font-bold transition-all flex items-center justify-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
             activeChart === 'bbu'
               ? 'bg-white text-slate-900 shadow-sm'
-              : 'text-slate-500 hover:text-slate-900'
+              : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          <Scale size={16} className={activeChart === 'bbu' ? 'text-slateTeal' : ''} />
+          <Scale size={18} className={activeChart === 'bbu' ? 'text-primary' : ''} />
           <span>Berat / Umur (BB/U)</span>
         </button>
       </div>
@@ -332,40 +332,40 @@ export function GrowthCharts({
           {/* Header & Highlighted Measurement Display */}
           <div className="flex items-start justify-between border-b border-slate-100 pb-3">
             <div>
-              <span className="text-[11px] font-extrabold text-slateTeal uppercase tracking-wider block">
-                Kurva Baku WHO • {child.jenis_kelamin === 'L' ? 'Laki-Laki' : 'Perempuan'}
+              <span className="text-[14px] font-bold text-primary uppercase tracking-wider block">
+                Kurva baku WHO • {child.jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan'}
               </span>
-              <h3 className="text-[17px] font-extrabold text-slate-900 leading-snug">
-                Tinggi menurut Umur (TB/U)
+              <h3 className="text-[18px] font-extrabold text-slate-900 leading-snug">
+                Tinggi menurut umur (TB/U)
               </h3>
             </div>
 
             {/* Highlighted Value (24px+, Bold) */}
             {highlightedMeasurement && (
               <div className="text-right">
-                <span className="text-[11px] font-bold text-slate-500 block">
-                  Usia {highlightedAge} Bulan
+                <span className="text-[13px] font-bold text-slate-600 block">
+                  Usia {highlightedAge} bulan
                 </span>
-                <span className="text-[26px] font-black text-slateTeal tracking-tight leading-none">
+                <span className="text-[26px] font-black text-primary tracking-tight leading-none">
                   {highlightedMeasurement.tinggi_cm}{' '}
-                  <span className="text-[14px] font-bold text-slate-500">cm</span>
+                  <span className="text-[16px] font-bold text-slate-600">cm</span>
                 </span>
               </div>
             )}
           </div>
 
           {/* Color Band Legend (Never color alone, text labels included) */}
-          <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100/70 border border-emerald-300 text-emerald-900">
-              <CheckCircle2 size={12} className="text-emerald-700" />
+          <div className="flex flex-wrap items-center gap-2 text-[13px] font-bold">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100/70 border border-emerald-300 text-emerald-900">
+              <CheckCircle2 size={14} className="text-emerald-700" />
               <span>Normal (&gt; -1 SD)</span>
             </span>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100/70 border border-amber-300 text-amber-900">
-              <AlertTriangle size={12} className="text-amber-700" />
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100/70 border border-amber-300 text-amber-900">
+              <AlertTriangle size={14} className="text-amber-700" />
               <span>Waspada (-2 s/d -1 SD)</span>
             </span>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-100/70 border border-rose-300 text-rose-900">
-              <AlertOctagon size={12} className="text-rose-700" />
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-100/70 border border-rose-300 text-rose-900">
+              <AlertOctagon size={14} className="text-rose-700" />
               <span>Stunting (&lt; -2 SD)</span>
             </span>
           </div>
@@ -379,7 +379,7 @@ export function GrowthCharts({
                   margin={{ top: 20, right: 15, left: -10, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
-                  
+
                   {/* Color Bands (Soft Tints) */}
                   {/* Top: Light Green (above -1 SD up to +3 SD) */}
                   <Area
@@ -515,14 +515,14 @@ export function GrowthCharts({
           </div>
 
           {/* Plain Indonesian sentence explaining status */}
-          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80">
-            <p className="text-[13px] font-bold text-slate-800 leading-snug">
+          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+            <p className="text-[16px] font-bold text-slate-900 leading-snug">
               {getTbuChartSentence(highlightedMeasurement?.z_tbu)}
             </p>
           </div>
 
           {/* Mandatory Visual Guide Note */}
-          <p className="text-[11px] text-slate-500 font-medium text-center italic">
+          <p className="text-[14px] text-slate-600 font-medium text-center italic">
             * Pita warna hanya panduan visual. Status resmi dihitung sistem.
           </p>
         </div>
@@ -537,37 +537,37 @@ export function GrowthCharts({
           {/* Header & Highlighted Measurement Display */}
           <div className="flex items-start justify-between border-b border-slate-100 pb-3">
             <div>
-              <span className="text-[11px] font-extrabold text-slateTeal uppercase tracking-wider block">
-                Kurva Baku WHO • {child.jenis_kelamin === 'L' ? 'Laki-Laki' : 'Perempuan'}
+              <span className="text-[14px] font-bold text-primary uppercase tracking-wider block">
+                Kurva baku WHO • {child.jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan'}
               </span>
-              <h3 className="text-[17px] font-extrabold text-slate-900 leading-snug">
-                Berat menurut Umur (BB/U)
+              <h3 className="text-[18px] font-extrabold text-slate-900 leading-snug">
+                Berat menurut umur (BB/U)
               </h3>
             </div>
 
             {/* Highlighted Value (24px+, Bold) */}
             {highlightedMeasurement && (
               <div className="text-right">
-                <span className="text-[11px] font-bold text-slate-500 block">
-                  Usia {highlightedAge} Bulan
+                <span className="text-[13px] font-bold text-slate-600 block">
+                  Usia {highlightedAge} bulan
                 </span>
-                <span className="text-[26px] font-black text-slateTeal tracking-tight leading-none">
+                <span className="text-[26px] font-black text-primary tracking-tight leading-none">
                   {highlightedMeasurement.berat_kg}{' '}
-                  <span className="text-[14px] font-bold text-slate-500">kg</span>
+                  <span className="text-[16px] font-bold text-slate-600">kg</span>
                 </span>
               </div>
             )}
           </div>
 
           {/* Color Band Legend (BB/U: weight alone never shows red) */}
-          <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100/70 border border-emerald-300 text-emerald-900">
-              <CheckCircle2 size={12} className="text-emerald-700" />
+          <div className="flex flex-wrap items-center gap-2 text-[13px] font-bold">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100/70 border border-emerald-300 text-emerald-900">
+              <CheckCircle2 size={14} className="text-emerald-700" />
               <span>Normal (&gt; -2 SD)</span>
             </span>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100/70 border border-amber-300 text-amber-900">
-              <AlertTriangle size={12} className="text-amber-700" />
-              <span>Berat Kurang (&lt; -2 SD)</span>
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100/70 border border-amber-300 text-amber-900">
+              <AlertTriangle size={14} className="text-amber-700" />
+              <span>Berat kurang (&lt; -2 SD)</span>
             </span>
           </div>
 
@@ -707,14 +707,14 @@ export function GrowthCharts({
           </div>
 
           {/* Plain Indonesian sentence explaining status */}
-          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80">
-            <p className="text-[13px] font-bold text-slate-800 leading-snug">
+          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+            <p className="text-[16px] font-bold text-slate-900 leading-snug">
               {getBbuChartSentence(highlightedMeasurement?.z_bbu)}
             </p>
           </div>
 
           {/* Mandatory Visual Guide Note */}
-          <p className="text-[11px] text-slate-500 font-medium text-center italic">
+          <p className="text-[14px] text-slate-600 font-medium text-center italic">
             * Pita warna hanya panduan visual. Status resmi dihitung sistem.
           </p>
         </div>

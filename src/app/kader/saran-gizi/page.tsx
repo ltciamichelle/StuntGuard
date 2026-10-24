@@ -2,7 +2,8 @@
 
 import React, { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Card, Button } from '@/components/ui';
+import { Card, Button, Skeleton, BottomActionBar } from '@/components/ui';
+import { SyncStatusBadge } from '@/components/SyncStatusBadge';
 import { ArrowLeft, Egg, Fish, Utensils, Heart } from 'lucide-react';
 
 function SaranGiziContent() {
@@ -20,122 +21,142 @@ function SaranGiziContent() {
 
   const tips = [
     {
-      icon: <Egg className="text-amber-500" size={28} />,
-      bg: 'bg-amber-50 border-amber-200',
+      icon: <Egg className="text-amber-600" size={32} />,
+      bg: 'bg-amber-50 border-amber-300',
       badge: 'Protein Terbaik',
-      title: '1 Butir Telur Tiap Hari',
+      title: '1 butir telur tiap hari',
       desc: 'Berikan balita minimal 1 butir telur ayam setiap hari (direbus, didadar, atau dicampur ke bubur). Telur mengandung protein berkualitas tinggi dan kolin yang sangat ampuh mengejar pertambahan tinggi badan.',
     },
     {
-      icon: <Fish className="text-sky-500" size={28} />,
-      bg: 'bg-sky-50 border-sky-200',
+      icon: <Fish className="text-sky-600" size={32} />,
+      bg: 'bg-sky-50 border-sky-300',
       badge: 'Ikan Lokal Kaya Omega-3',
-      title: 'Ikan Segar Lokal (Kembung, Lele, Gabus)',
+      title: 'Ikan segar lokal (kembung, lele, gabus)',
       desc: 'Ikan kembung memiliki omega-3 dan protein yang sama baiknya dengan ikan salmon, namun dengan harga terjangkau. Ikan lele dan gabus juga sangat bagus untuk pembentukan jaringan otot dan tulang anak.',
     },
     {
-      icon: <Utensils className="text-emerald-500" size={28} />,
-      bg: 'bg-emerald-50 border-emerald-200',
+      icon: <Utensils className="text-emerald-600" size={32} />,
+      bg: 'bg-emerald-50 border-emerald-300',
       badge: 'Variasi Hewani',
-      title: 'Hati Ayam & Daging Cincang',
+      title: 'Hati ayam & daging cincang',
       desc: 'Hati ayam sangat kaya zat besi dan vitamin A untuk mencegah anak lemas dan kurang darah (anemia). Kombinasikan juga dengan tempe, tahu, atau kacang hijau sebagai protein pendamping.',
     },
     {
-      icon: <Heart className="text-rose-500" size={28} />,
-      bg: 'bg-rose-50 border-rose-200',
+      icon: <Heart className="text-rose-600" size={32} />,
+      bg: 'bg-rose-50 border-rose-300',
       badge: 'Pola Makan Aktif',
-      title: '3x Makan Utama + 2x Selingan Sehat',
+      title: '3 kali makan utama + 2 kali selingan sehat',
       desc: 'Pastikan anak makan teratur 3 kali sehari makanan padat bergizi dan 2 kali camilan sehat (buah, puding susu, atau biskuit bergizi). Jangan biarkan anak kenyang air putih manis atau camilan berpengawet sebelum jam makan.',
     },
   ];
 
   return (
-    <div className="min-h-screen px-4 py-5 flex flex-col justify-between max-w-[420px] mx-auto w-full">
-      <div className="space-y-4">
-        {/* Header */}
-        <header className="flex items-center gap-3 pb-2 border-b border-slate-100">
+    <div className="min-h-screen px-4 py-5 pb-40 max-w-[480px] mx-auto w-full space-y-6 select-none">
+      {/* Header with Back and Sync badge */}
+      <header className="flex items-center justify-between gap-3 pb-3 border-b border-slate-200">
+        <div className="flex items-center gap-3">
           <button
             onClick={handleBack}
-            className="w-11 h-11 rounded-full bg-white border-2 border-slate-200 flex items-center justify-center text-slate-700 hover:border-berry hover:text-berry transition-colors cursor-pointer"
+            className="w-14 h-14 min-w-[56px] min-h-[56px] rounded-2xl bg-white border-2 border-slate-300 flex items-center justify-center text-slate-800 hover:border-primary hover:text-primary transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer shadow-sm"
             title="Kembali"
             aria-label="Kembali"
           >
-            <ArrowLeft size={20} />
+            <ArrowLeft size={24} />
           </button>
           <div>
-            <span className="text-[11px] font-extrabold text-slateTeal uppercase tracking-wider block">
-              Panduan Kader & Orang Tua
+            <span className="text-[16px] font-bold text-primary block leading-none mb-1">
+              Panduan kader & orang tua
             </span>
-            <h1 className="text-xl font-extrabold text-slate-900 leading-tight">
-              Saran Asupan Gizi Balita
+            <h1 className="text-[22px] font-extrabold text-slate-900 leading-tight">
+              Saran asupan gizi
             </h1>
           </div>
-        </header>
-
-        {/* Intro Banner */}
-        <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200/80 text-[13px] text-amber-950">
-          <p className="font-bold mb-1">
-            Prioritas: Tingkatkan Asupan Protein Hewani Lokal
-          </p>
-          <p className="text-amber-900 leading-relaxed">
-            Untuk balita dengan indikasi berat badan rendah atau waspada gagal tumbuh, utamakan sumber protein hewani pada setiap porsi makan anak.
-          </p>
         </div>
+        <SyncStatusBadge />
+      </header>
 
-        {/* Tips List */}
-        <div className="space-y-3 pb-4">
-          {tips.map((tip, idx) => (
-            <Card
-              key={idx}
-              padding="md"
-              className={`border-2 ${tip.bg} shadow-soft transition-all`}
-            >
-              <div className="flex items-start gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm flex-shrink-0">
-                  {tip.icon}
-                </div>
-                <div className="space-y-1">
-                  <span className="inline-block px-2 py-0.5 rounded-full bg-white/90 text-slate-700 text-[10px] font-extrabold uppercase tracking-wider">
-                    {tip.badge}
-                  </span>
-                  <h3 className="text-[16px] font-extrabold text-slate-900 leading-snug">
-                    {tip.title}
-                  </h3>
-                  <p className="text-[13px] text-slate-700 leading-relaxed">
-                    {tip.desc}
-                  </p>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+      {/* Intro Banner */}
+      <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-950 space-y-1 shadow-sm">
+        <p className="text-[18px] font-bold leading-snug">
+          Prioritas: Tingkatkan asupan protein hewani lokal
+        </p>
+        <p className="text-[16px] text-amber-900 leading-relaxed">
+          Untuk balita dengan indikasi berat badan rendah atau waspada gagal tumbuh, utamakan sumber protein hewani pada setiap porsi makan anak.
+        </p>
       </div>
 
-      {/* Footer */}
-      <footer className="pt-2 pb-4">
+      {/* Tips List */}
+      <div className="space-y-4">
+        {tips.map((tip, idx) => (
+          <Card
+            key={idx}
+            padding="lg"
+            className={`border-2 ${tip.bg} shadow-soft transition-all`}
+          >
+            <div className="flex items-start gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center shadow-sm flex-shrink-0 border border-slate-200">
+                {tip.icon}
+              </div>
+              <div className="space-y-1.5 flex-1">
+                <span className="inline-block px-3 py-1 rounded-full bg-white text-slate-800 text-[14px] font-extrabold border border-slate-200 shadow-xs">
+                  {tip.badge}
+                </span>
+                <h2 className="text-[18px] font-extrabold text-slate-900 leading-snug">
+                  {tip.title}
+                </h2>
+                <p className="text-[16px] text-slate-800 leading-relaxed">
+                  {tip.desc}
+                </p>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      {/* Sticky Bottom Action Bar */}
+      <BottomActionBar>
         <Button
           variant="primary"
+          size="kader"
           fullWidth
           onClick={handleBack}
-          className="min-h-[56px] text-[16px] font-bold shadow-md"
+          className="shadow-md"
         >
-          Kembali ke Hasil Pengukuran
+          Kembali ke hasil pengukuran
         </Button>
-      </footer>
+      </BottomActionBar>
+    </div>
+  );
+}
+
+function SaranGiziSkeleton() {
+  return (
+    <div className="min-h-screen px-4 py-5 pb-40 max-w-[480px] mx-auto w-full space-y-6">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+        <div className="flex items-center gap-3">
+          <Skeleton className="w-14 h-14 rounded-2xl" />
+          <div className="space-y-2">
+            <Skeleton className="w-32 h-4" />
+            <Skeleton className="w-48 h-6" />
+          </div>
+        </div>
+        <Skeleton className="w-24 h-10 rounded-full" />
+      </div>
+      <Skeleton className="w-full h-24 rounded-2xl" />
+      <div className="space-y-4">
+        <Skeleton className="w-full h-36 rounded-2xl" />
+        <Skeleton className="w-full h-36 rounded-2xl" />
+        <Skeleton className="w-full h-36 rounded-2xl" />
+      </div>
     </div>
   );
 }
 
 export default function SaranGiziPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen px-4 py-16 flex items-center justify-center text-slate-500">
-          Memuat panduan gizi...
-        </div>
-      }
-    >
+    <Suspense fallback={<SaranGiziSkeleton />}>
       <SaranGiziContent />
     </Suspense>
   );
 }
+

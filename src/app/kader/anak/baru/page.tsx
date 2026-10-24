@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { Card, Button } from '@/components/ui';
+import { Card, Button, BottomActionBar } from '@/components/ui';
 import { SyncStatusBadge } from '@/components/SyncStatusBadge';
 import { 
   ChevronLeft, 
@@ -196,10 +196,10 @@ export default function RegisterChildPage() {
   ];
 
   return (
-    <div className="min-h-screen px-4 py-5 flex flex-col justify-between max-w-[480px] mx-auto w-full">
-      <div>
+    <div className="min-h-screen px-4 py-5 flex flex-col justify-between max-w-[480px] mx-auto w-full pb-36">
+      <div className="space-y-6">
         {/* Top Header: Back button, title, and fixed sync badge */}
-        <header className="flex items-center justify-between pb-3 mb-4">
+        <header className="flex items-center justify-between pb-3 border-b border-border">
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -211,7 +211,7 @@ export default function RegisterChildPage() {
               <ChevronLeft size={24} strokeWidth={2} />
             </button>
             <div>
-              <span className="text-[14px] font-bold text-teal uppercase tracking-wider block">
+              <span className="text-[16px] font-bold text-teal uppercase tracking-wider block">
                 Formulir Pendaftaran
               </span>
               <h1 className="text-[24px] font-bold text-text leading-tight">
@@ -224,18 +224,18 @@ export default function RegisterChildPage() {
         </header>
 
         {/* Form Pendaftaran */}
-        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4 pb-20">
+        <form id="form-register-anak" onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
           {/* General Error Banner */}
           {generalError && (
-            <div className="p-4 rounded-[16px] bg-red-light border border-red/40 flex items-start gap-3 text-red text-[16px]">
-              <TriangleAlert size={20} strokeWidth={2} className="text-red flex-shrink-0 mt-0.5" />
+            <div role="alert" className="p-4 rounded-[16px] bg-red-light border border-red/40 flex items-start gap-3 text-red text-[16px]">
+              <TriangleAlert size={22} strokeWidth={2} className="text-red flex-shrink-0 mt-0.5" />
               <span className="font-semibold leading-snug">{generalError}</span>
             </div>
           )}
 
           {/* 1. Nama Balita */}
           <div>
-            <label className="block text-[16px] font-semibold text-text mb-1.5">
+            <label htmlFor="input-nama-anak" className="block text-[16px] font-semibold text-text mb-2">
               Nama Lengkap Balita <span className="text-red">*</span>
             </label>
             <input
@@ -251,7 +251,7 @@ export default function RegisterChildPage() {
 
           {/* 2. Nama Pengasuh */}
           <div>
-            <label className="block text-[16px] font-semibold text-text mb-1.5">
+            <label htmlFor="input-nama-pengasuh" className="block text-[16px] font-semibold text-text mb-2">
               Nama Pengasuh <span className="text-red">*</span>
             </label>
             <input
@@ -265,12 +265,12 @@ export default function RegisterChildPage() {
             />
           </div>
 
-          {/* 3. Hubungan dengan anak: 4 Big Picture Buttons (Task 2) */}
+          {/* 3. Hubungan dengan anak: 4 Big Picture Buttons */}
           <div>
-            <label className="block text-[16px] font-semibold text-text mb-1.5">
+            <label className="block text-[16px] font-semibold text-text mb-2">
               Hubungan dengan Anak <span className="text-red">*</span>
             </label>
-            <div className="grid grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-2 gap-3">
               {RELATION_OPTIONS.map((opt) => {
                 const isSelected = hubunganPengasuh === opt.value;
                 return (
@@ -279,25 +279,25 @@ export default function RegisterChildPage() {
                     type="button"
                     id={`btn-relasi-${opt.value}`}
                     onClick={() => handleHubunganChange(opt.value)}
-                    className={`min-h-[72px] p-3 rounded-[16px] border-2 flex items-center gap-3 transition-all cursor-pointer text-left ${
+                    className={`min-h-[76px] p-3 rounded-[16px] border-2 flex items-center gap-3 transition-all cursor-pointer text-left ${
                       isSelected
                         ? 'bg-primary-selected border-primary shadow-soft'
                         : 'bg-white border-border hover:border-slate-300'
                     }`}
                   >
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
                         isSelected ? 'bg-primary text-white' : 'bg-slate-100 text-text-muted'
                       }`}
                     >
                       {opt.value === 'ibu' ? (
-                        <Heart size={20} strokeWidth={2} />
+                        <Heart size={22} strokeWidth={2} />
                       ) : opt.value === 'ayah' ? (
-                        <User size={20} strokeWidth={2} />
+                        <User size={22} strokeWidth={2} />
                       ) : opt.value === 'nenek_kakek' ? (
-                        <Users size={20} strokeWidth={2} />
+                        <Users size={22} strokeWidth={2} />
                       ) : (
-                        <User size={20} strokeWidth={2} />
+                        <User size={22} strokeWidth={2} />
                       )}
                     </div>
                     <div className="min-w-0">
@@ -308,7 +308,7 @@ export default function RegisterChildPage() {
                       >
                         {opt.label}
                       </span>
-                      <span className="text-[12px] text-text-muted font-medium truncate block">
+                      <span className="text-[14px] text-text-muted font-medium truncate block mt-0.5">
                         {opt.desc}
                       </span>
                     </div>
@@ -320,7 +320,7 @@ export default function RegisterChildPage() {
 
           {/* 4. Tanggal Lahir (Date Picker) */}
           <div>
-            <label className="block text-[16px] font-semibold text-text mb-1.5">
+            <label htmlFor="input-tgl-lahir" className="block text-[16px] font-semibold text-text mb-2">
               Tanggal Lahir <span className="text-red">*</span>
             </label>
             <input
@@ -336,7 +336,7 @@ export default function RegisterChildPage() {
 
           {/* 5. Jenis Kelamin (Two Big Toggle Buttons L and P) */}
           <div>
-            <label className="block text-[16px] font-semibold text-text mb-1.5">
+            <label className="block text-[16px] font-semibold text-text mb-2">
               Jenis Kelamin <span className="text-red">*</span>
             </label>
             <div className="grid grid-cols-2 gap-3">
@@ -352,7 +352,7 @@ export default function RegisterChildPage() {
                 }`}
               >
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  className={`w-11 h-11 rounded-full flex items-center justify-center ${
                     jenisKelamin === 'L' ? 'bg-primary text-white' : 'bg-slate-100 text-text-muted'
                   }`}
                 >
@@ -366,7 +366,7 @@ export default function RegisterChildPage() {
                   >
                     Laki-laki
                   </span>
-                  <span className="text-[14px] text-text-muted font-medium">Kode L</span>
+                  <span className="text-[16px] text-text-muted font-medium">Kode L</span>
                 </div>
               </button>
 
@@ -382,7 +382,7 @@ export default function RegisterChildPage() {
                 }`}
               >
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  className={`w-11 h-11 rounded-full flex items-center justify-center ${
                     jenisKelamin === 'P' ? 'bg-primary text-white' : 'bg-slate-100 text-text-muted'
                   }`}
                 >
@@ -396,7 +396,7 @@ export default function RegisterChildPage() {
                   >
                     Perempuan
                   </span>
-                  <span className="text-[14px] text-text-muted font-medium">Kode P</span>
+                  <span className="text-[16px] text-text-muted font-medium">Kode P</span>
                 </div>
               </button>
             </div>
@@ -404,13 +404,13 @@ export default function RegisterChildPage() {
 
           {/* 6. NIK (Optional, 16 Digits) */}
           <div className="pt-2 border-t border-border">
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-[16px] font-semibold text-text">
+            <div className="flex items-center justify-between mb-2">
+              <label htmlFor="input-nik-anak" className="block text-[16px] font-semibold text-text">
                 NIK Balita <span className="text-text-muted font-normal">(Opsional)</span>
               </label>
               {nik && (
                 <span
-                  className={`text-[14px] font-bold ${nik.length === 16 ? 'text-green' : 'text-teal'}`}
+                  className={`text-[16px] font-bold ${nik.length === 16 ? 'text-green' : 'text-teal'}`}
                 >
                   {nik.length} / 16 angka
                 </span>
@@ -430,18 +430,18 @@ export default function RegisterChildPage() {
               }`}
             />
 
-            {/* Helper Text jika NIK kosong (Task 2) */}
+            {/* Helper Text jika NIK kosong */}
             {!nik && (
-              <p className="text-[14px] text-text-muted font-medium mt-1.5 leading-snug">
+              <p className="text-[16px] text-text-muted font-medium mt-1.5 leading-snug">
                 Belum punya NIK? Isi nomor KK atau nama pengasuh.
               </p>
             )}
 
-            {/* NIK Error Message */}
+            {/* NIK Error Message under field */}
             {nikError && (
-              <div className="mt-2 p-3 rounded-[16px] bg-red-light border border-red/40 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-red text-[14px] font-semibold">
-                  <TriangleAlert size={20} strokeWidth={2} className="text-red flex-shrink-0" />
+              <div role="alert" className="mt-2 p-3.5 rounded-[16px] bg-red-light border border-red/40 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-red text-[16px] font-semibold">
+                  <TriangleAlert size={22} strokeWidth={2} className="text-red flex-shrink-0" />
                   <span>{nikError}</span>
                 </div>
 
@@ -449,9 +449,9 @@ export default function RegisterChildPage() {
                   <button
                     type="button"
                     onClick={() => router.push(`/kader/ukur/${duplicateChildId}`)}
-                    className="text-[14px] font-bold bg-white text-red px-3 py-1.5 rounded-full border border-red/30 hover:bg-red-50 transition-colors inline-flex items-center gap-1 cursor-pointer"
+                    className="text-[15px] font-bold bg-white text-red px-3.5 py-2 rounded-full border border-red/30 hover:bg-red-50 transition-colors inline-flex items-center gap-1.5 cursor-pointer min-h-[44px]"
                   >
-                    <span>Buka Balita</span>
+                    <span>Buka Data Balita</span>
                     <ExternalLink size={16} strokeWidth={2} />
                   </button>
                 )}
@@ -461,7 +461,7 @@ export default function RegisterChildPage() {
 
           {/* 7. Nomor KK (Optional) */}
           <div>
-            <label className="block text-[16px] font-semibold text-text mb-1.5">
+            <label htmlFor="input-no-kk" className="block text-[16px] font-semibold text-text mb-2">
               Nomor Kartu Keluarga (KK) <span className="text-text-muted font-normal">(Opsional)</span>
             </label>
             <input
@@ -476,18 +476,18 @@ export default function RegisterChildPage() {
             />
           </div>
 
-          {/* 8. Consent (Task 3) */}
-          <div className="mt-2 p-4 rounded-[20px] bg-slate-50 border border-border flex flex-col gap-3">
+          {/* 8. Persetujuan Orang Tua / Wali */}
+          <div className="p-4 rounded-[20px] bg-slate-50 border border-border flex flex-col gap-4">
             <label
               htmlFor="checkbox-consent"
-              className="flex items-start gap-3 cursor-pointer select-none"
+              className="flex items-start gap-3.5 cursor-pointer select-none"
             >
               <input
                 type="checkbox"
                 id="checkbox-consent"
                 checked={consentChecked}
                 onChange={(e) => setConsentChecked(e.target.checked)}
-                className="w-6 h-6 mt-0.5 rounded-lg border-2 border-slate-300 text-primary focus:ring-primary cursor-pointer accent-primary flex-shrink-0"
+                className="w-6 h-6 mt-1 rounded-lg border-2 border-slate-300 text-primary focus:ring-primary cursor-pointer accent-primary flex-shrink-0"
               />
               <span className="text-[16px] text-text font-semibold leading-relaxed">
                 Orang tua atau wali yang sah sudah setuju datanya dicatat untuk pemantauan tumbuh kembang anak <span className="text-red">*</span>
@@ -495,8 +495,8 @@ export default function RegisterChildPage() {
             </label>
 
             {/* Field: Nama yang menyetujui */}
-            <div className="pt-2 border-t border-border/60">
-              <label className="block text-[14px] font-bold text-text-muted mb-1">
+            <div className="pt-3 border-t border-border">
+              <label htmlFor="input-consent-diberikan-oleh" className="block text-[16px] font-semibold text-text mb-2">
                 Nama yang Menyetujui <span className="text-red">*</span>
               </label>
               <input
@@ -505,16 +505,16 @@ export default function RegisterChildPage() {
                 value={diberikanOleh}
                 onChange={(e) => setDiberikanOleh(e.target.value)}
                 placeholder="Nama orang tua atau wali"
-                className="w-full min-h-[52px] px-3.5 text-[16px] font-medium text-text bg-white border border-border rounded-[12px] focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
+                className="w-full min-h-[56px] px-4 text-[16px] font-medium text-text bg-white border border-border rounded-[16px] focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
               />
             </div>
 
             {/* Relationship buttons for Consent */}
             <div>
-              <label className="block text-[14px] font-bold text-text-muted mb-1">
+              <label className="block text-[16px] font-semibold text-text mb-2">
                 Hubungan yang Menyetujui
               </label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2.5">
                 {RELATION_OPTIONS.map((opt) => {
                   const isSelected = consentHubungan === opt.value;
                   return (
@@ -522,35 +522,36 @@ export default function RegisterChildPage() {
                       key={`consent-${opt.value}`}
                       type="button"
                       onClick={() => setConsentHubungan(opt.value)}
-                      className={`p-2.5 rounded-[12px] border text-left flex items-center gap-2 cursor-pointer transition-all ${
+                      className={`p-3 rounded-[14px] border-2 text-left flex items-center gap-2 cursor-pointer transition-all min-h-[56px] ${
                         isSelected
                           ? 'bg-primary-selected border-primary font-bold text-primary'
                           : 'bg-white border-border text-text font-medium hover:border-slate-300'
                       }`}
                     >
-                      <span className="text-[14px]">{opt.label}</span>
+                      <span className="text-[16px]">{opt.label}</span>
                     </button>
                   );
                 })}
               </div>
             </div>
           </div>
-
-          {/* Submit Button */}
-          <div className="mt-3">
-            <Button
-              id="btn-simpan-balita"
-              type="submit"
-              variant="primary"
-              size="kader"
-              loading={loading}
-              icon={<CircleCheck size={24} strokeWidth={2} />}
-            >
-              Simpan & Lanjut Ukur Balita
-            </Button>
-          </div>
         </form>
       </div>
+
+      {/* Main action in BottomActionBar */}
+      <BottomActionBar>
+        <Button
+          id="btn-simpan-balita"
+          type="submit"
+          form="form-register-anak"
+          variant="primary"
+          size="kader"
+          loading={loading}
+          icon={<CircleCheck size={24} strokeWidth={2} />}
+        >
+          Simpan & Lanjut Ukur Balita
+        </Button>
+      </BottomActionBar>
     </div>
   );
 }

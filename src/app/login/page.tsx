@@ -123,24 +123,27 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen px-5 py-8 flex flex-col justify-between max-w-[420px] mx-auto w-full">
+    <main className="min-h-screen px-4 py-6 flex flex-col justify-between max-w-[480px] mx-auto w-full">
       {/* Top Brand Section */}
-      <div>
-        <div className="flex flex-col items-center text-center mt-3 mb-6">
+      <div className="space-y-6">
+        <div className="flex flex-col items-center text-center mt-2">
           <img
             src="/logo.png"
             alt="StuntGuard Logo"
             className="w-32 h-32 object-contain drop-shadow-sm mb-1"
           />
-          <p className="text-[14px] text-slateTeal font-bold tracking-tight">
+          <h1 className="text-[24px] font-bold text-text leading-tight">
+            Masuk ke StuntGuard
+          </h1>
+          <p className="text-[16px] text-teal font-bold tracking-tight mt-1">
             Posyandu Integrasi Layanan Primer (ILP)
           </p>
         </div>
 
         {/* Login Form */}
-        <form onSubmit={handleLogin} className="flex flex-col gap-4">
+        <form onSubmit={handleLogin} className="flex flex-col gap-5">
           <div>
-            <label className="block text-[14px] font-bold text-slate-700 mb-2">
+            <label htmlFor="login-email" className="block text-[16px] font-bold text-text mb-2">
               Alamat Email
             </label>
             <div className="relative">
@@ -152,17 +155,17 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="nama@posyandu.desa.id"
-                className="w-full min-h-[56px] px-4 pl-12 text-[16px] font-medium text-slate-900 bg-white border-2 border-slate-200 rounded-2xl focus:border-berry focus:outline-none transition-colors"
+                className="w-full min-h-[56px] px-4 pl-12 text-[16px] font-medium text-text bg-white border-2 border-border rounded-2xl focus:border-primary focus:outline-none transition-colors"
               />
               <Mail
-                size={20}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                size={22}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-[14px] font-bold text-slate-700 mb-2">
+            <label htmlFor="login-password" className="block text-[16px] font-bold text-text mb-2">
               Kata Sandi
             </label>
             <div className="relative">
@@ -174,31 +177,32 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full min-h-[56px] px-4 pl-12 text-[16px] font-medium text-slate-900 bg-white border-2 border-slate-200 rounded-2xl focus:border-berry focus:outline-none transition-colors"
+                className="w-full min-h-[56px] px-4 pl-12 text-[16px] font-medium text-text bg-white border-2 border-border rounded-2xl focus:border-primary focus:outline-none transition-colors"
               />
               <Lock
-                size={20}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                size={22}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none"
               />
             </div>
           </div>
 
           {/* Error Banner in Simple Indonesian */}
           {errorMessage && (
-            <div className="p-4 rounded-[16px] bg-red-light border border-red/40 flex items-start gap-3 text-red animate-fadeIn">
-              <TriangleAlert size={20} strokeWidth={2} className="text-red flex-shrink-0 mt-0.5" aria-hidden="true" />
+            <div role="alert" className="p-4 rounded-[16px] bg-red-light border border-red/40 flex items-start gap-3 text-red animate-fadeIn">
+              <TriangleAlert size={22} strokeWidth={2} className="text-red flex-shrink-0 mt-0.5" aria-hidden="true" />
               <p className="text-[16px] font-semibold leading-snug">
                 {errorMessage}
               </p>
             </div>
           )}
 
-          {/* Large Pill Action Button: Masuk */}
-          <div className="mt-2">
+          {/* Large Action Button: Masuk */}
+          <div className="pt-2">
             <Button
               id="btn-login-submit"
               type="submit"
               variant="primary"
+              size="kader"
               loading={loading}
             >
               Masuk
@@ -207,54 +211,54 @@ export default function LoginPage() {
         </form>
 
         {/* Quick Test Accounts Helper */}
-        <div className="mt-8 pt-6 border-t border-slate-200">
-          <p className="text-[13px] font-bold text-slate-500 uppercase tracking-wider text-center mb-3">
-            Akun Uji Coba Terdaftar
+        <div className="pt-6 border-t border-border">
+          <p className="text-[16px] font-bold text-text-muted uppercase tracking-wider text-center mb-3">
+            Pilih Akun Uji Coba
           </p>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2.5">
             <button
               type="button"
               onClick={() => handleSelectQuickAccount('kader1@test.com')}
-              className="text-left p-3 rounded-xl bg-white border border-slate-200 hover:border-berry text-[13px] flex items-center justify-between transition-colors cursor-pointer"
+              className="text-left p-3.5 rounded-2xl bg-white border border-border hover:border-primary text-[16px] flex items-center justify-between transition-colors cursor-pointer min-h-[56px]"
             >
               <div>
-                <span className="font-bold text-slate-900 block">kader1@test.com</span>
-                <span className="text-slate-500 text-[12px]">Peran: Kader (Sri Wahyuni • Posyandu Melati 03)</span>
+                <span className="font-bold text-text block text-[16px]">kader1@test.com</span>
+                <span className="text-text-muted text-[16px]">Kader Sri Wahyuni • Posyandu Melati 03</span>
               </div>
-              <span className="text-berry font-bold text-[12px]">Gunakan</span>
+              <span className="text-primary font-bold text-[16px] ml-2 flex-shrink-0">Gunakan</span>
             </button>
 
             <button
               type="button"
               onClick={() => handleSelectQuickAccount('kader2@test.com')}
-              className="text-left p-3 rounded-xl bg-white border border-slate-200 hover:border-berry text-[13px] flex items-center justify-between transition-colors cursor-pointer"
+              className="text-left p-3.5 rounded-2xl bg-white border border-border hover:border-primary text-[16px] flex items-center justify-between transition-colors cursor-pointer min-h-[56px]"
             >
               <div>
-                <span className="font-bold text-slate-900 block">kader2@test.com</span>
-                <span className="text-slate-500 text-[12px]">Peran: Kader (Siti Aminah • Posyandu Mawar 01)</span>
+                <span className="font-bold text-text block text-[16px]">kader2@test.com</span>
+                <span className="text-text-muted text-[16px]">Kader Siti Aminah • Posyandu Mawar 01</span>
               </div>
-              <span className="text-berry font-bold text-[12px]">Gunakan</span>
+              <span className="text-primary font-bold text-[16px] ml-2 flex-shrink-0">Gunakan</span>
             </button>
 
             <button
               type="button"
               onClick={() => handleSelectQuickAccount('bidan@test.com')}
-              className="text-left p-3 rounded-xl bg-white border border-slate-200 hover:border-slateTeal text-[13px] flex items-center justify-between transition-colors cursor-pointer"
+              className="text-left p-3.5 rounded-2xl bg-white border border-border hover:border-teal text-[16px] flex items-center justify-between transition-colors cursor-pointer min-h-[56px]"
             >
               <div>
-                <span className="font-bold text-slate-900 block">bidan@test.com</span>
-                <span className="text-slate-500 text-[12px]">Peran: Bidan Desa (Bdn. Endang Rahayu)</span>
+                <span className="font-bold text-text block text-[16px]">bidan@test.com</span>
+                <span className="text-text-muted text-[16px]">Bidan Desa • Bdn. Endang Rahayu</span>
               </div>
-              <span className="text-slateTeal font-bold text-[12px]">Gunakan</span>
+              <span className="text-teal font-bold text-[16px] ml-2 flex-shrink-0">Gunakan</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* Footer Info */}
-      <footer className="text-center py-4">
-        <p className="text-[12px] text-slate-400">
-          StuntGuard • Versi Web Mobile Kader Posyandu
+      <footer className="text-center py-4 mt-6">
+        <p className="text-[16px] text-text-muted font-medium">
+          StuntGuard • Deteksi Dini Stunting Posyandu
         </p>
       </footer>
     </main>

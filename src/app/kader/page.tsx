@@ -183,22 +183,22 @@ function KaderHomeContent() {
   };
 
   return (
-    <div className="min-h-screen px-4 py-5 flex flex-col justify-between max-w-[420px] mx-auto w-full">
-      <div>
-        {/* Top Header Bar with Fixed Sync Status Badge & Small Logout */}
-        <header className="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+    <div className="min-h-screen px-4 py-5 flex flex-col justify-between max-w-[480px] mx-auto w-full">
+      <div className="space-y-6">
+        {/* Top Header Bar with Fixed Sync Status Badge & Logout */}
+        <header className="flex items-center justify-between pb-4 border-b border-border">
           {/* Posyandu Badge with StuntGuard Logo */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-3">
             <img
               src="/logo.png"
               alt="StuntGuard Logo"
-              className="w-9 h-9 object-contain rounded-xl bg-white p-0.5 border border-slate-200/80 shadow-xs"
+              className="w-11 h-11 object-contain rounded-2xl bg-white p-1 border border-border shadow-soft"
             />
             <div>
-              <span className="text-[10px] font-black text-berry uppercase tracking-wider block leading-none">
+              <span className="text-[14px] font-bold text-primary uppercase tracking-wider block leading-none">
                 StuntGuard
               </span>
-              <span className="text-[13px] font-bold text-slateTeal uppercase tracking-tight block leading-tight mt-0.5">
+              <span className="text-[16px] font-bold text-teal block leading-tight mt-1">
                 {posyanduName}
               </span>
             </div>
@@ -208,208 +208,225 @@ function KaderHomeContent() {
             {/* Requirement 5: Fixed spot in top corner for sync status icon */}
             <SyncStatusBadge />
 
-            {/* Small logout button */}
+            {/* Logout button with accessible touch target */}
             <button
               id="btn-logout"
               onClick={handleLogoutClick}
-              className="p-2 rounded-full text-slate-500 hover:text-berry hover:bg-slate-100 transition-colors cursor-pointer"
+              className="w-12 h-12 rounded-full flex items-center justify-center text-text-muted hover:text-primary hover:bg-slate-100 transition-colors cursor-pointer"
               title="Keluar dari akun"
               aria-label="Keluar"
             >
-              <LogOut size={18} />
+              <LogOut size={22} strokeWidth={2} />
             </button>
           </div>
         </header>
 
-        {/* Success Notification Banner when returning from Measurement */}
-        {showSavedNotification && !dismissedToast && (
-          <div
-            id="toast-saved-success"
-            className="mb-4 p-4 bg-green-light border-2 border-green/30 rounded-[24px] flex items-center justify-between gap-3 text-text shadow-card animate-in fade-in slide-in-from-top-2 duration-300"
-          >
-            <div className="flex items-center gap-3">
-              <CircleCheck size={24} strokeWidth={2} className="text-green flex-shrink-0" />
-              <div>
-                <p className="text-[16px] font-bold leading-tight">
-                  Pengukuran Berhasil Disimpan
-                </p>
-                <p className="text-[16px] text-text-muted mt-0.5">
-                  Data balita telah tersimpan dan siap dipantau.
-                </p>
-              </div>
+        {loading ? (
+          <div className="space-y-6 py-2">
+            <div className="space-y-2">
+              <div className="h-4 w-32 bg-slate-200/80 rounded-full animate-pulse" />
+              <div className="h-8 w-48 bg-slate-200/80 rounded-xl animate-pulse" />
+              <div className="h-4 w-64 bg-slate-200/80 rounded-full animate-pulse" />
             </div>
-            <button
-              onClick={() => setDismissedToast(true)}
-              className="p-2 rounded-full text-text-muted hover:bg-slate-100 transition-colors"
-              aria-label="Tutup notifikasi"
-            >
-              <X size={20} strokeWidth={2} />
-            </button>
+            <div className="flex flex-col gap-4">
+              <div className="h-28 rounded-[24px] bg-slate-200/80 animate-pulse" />
+              <div className="h-28 rounded-[24px] bg-slate-200/80 animate-pulse" />
+              <div className="h-28 rounded-[24px] bg-slate-200/80 animate-pulse" />
+            </div>
           </div>
-        )}
-
-        {/* In-app Notice for Synced Offline Measurements with Status Kuning / Merah */}
-        {stuntingNotices.length > 0 && (
-          <div className="mb-4 flex flex-col gap-2">
-            {stuntingNotices.map((notice) => (
+        ) : (
+          <>
+            {/* Success Notification Banner when returning from Measurement */}
+            {showSavedNotification && !dismissedToast && (
               <div
-                key={notice.id}
-                id={`notice-stunting-${notice.id}`}
-                className={`p-4 rounded-[24px] border-2 flex items-start justify-between gap-3 shadow-card ${
-                  notice.status === 'merah'
-                    ? 'bg-red-light border-red/40 text-text'
-                    : 'bg-yellow-light border-yellow/40 text-text'
-                }`}
+                id="toast-saved-success"
+                className="p-4 bg-green-light border-2 border-green/30 rounded-[24px] flex items-center justify-between gap-3 text-text shadow-card animate-in fade-in slide-in-from-top-2 duration-300"
               >
-                <div className="flex items-start gap-3">
-                  {notice.status === 'merah' ? (
-                    <OctagonAlert
-                      size={24}
-                      strokeWidth={2}
-                      className="flex-shrink-0 mt-0.5 text-red"
-                      aria-hidden="true"
-                    />
-                  ) : (
-                    <TriangleAlert
-                      size={24}
-                      strokeWidth={2}
-                      className="flex-shrink-0 mt-0.5 text-yellow"
-                      aria-hidden="true"
-                    />
-                  )}
+                <div className="flex items-center gap-3">
+                  <CircleCheck size={24} strokeWidth={2} className="text-green flex-shrink-0" />
                   <div>
                     <p className="text-[16px] font-bold leading-tight">
-                      Hasil Sinkronisasi:{' '}
-                      <span className={notice.status === 'merah' ? 'text-red' : 'text-[#9A6F00]'}>
-                        {notice.status === 'merah' ? 'Status Merah (Perlu Rujukan)' : 'Status Kuning (Perlu Dipantau)'}
-                      </span>
+                      Pengukuran Berhasil Disimpan
                     </p>
                     <p className="text-[16px] text-text-muted mt-0.5">
-                      Balita <strong>{notice.childName}</strong> memerlukan tindak lanjut kader.
+                      Data balita telah tersimpan dan siap dipantau.
                     </p>
-                    <button
-                      onClick={() => router.push('/kader/tindak-lanjut')}
-                      className="mt-2 text-[16px] font-bold text-primary underline cursor-pointer"
-                    >
-                      Buka Daftar Tindak Lanjut
-                    </button>
                   </div>
                 </div>
                 <button
-                  onClick={() => handleDismissNotice(notice.id)}
-                  className="p-2 rounded-full hover:bg-black/10 transition-colors flex-shrink-0"
-                  aria-label="Tutup pemberitahuan"
+                  onClick={() => setDismissedToast(true)}
+                  className="p-2 rounded-full text-text-muted hover:bg-slate-100 transition-colors cursor-pointer"
+                  aria-label="Tutup notifikasi"
                 >
                   <X size={20} strokeWidth={2} />
                 </button>
               </div>
-            ))}
-          </div>
+            )}
+
+            {/* In-app Notice for Synced Measurements with Status Kuning / Merah */}
+            {stuntingNotices.length > 0 && (
+              <div className="flex flex-col gap-3">
+                {stuntingNotices.map((notice) => (
+                  <div
+                    key={notice.id}
+                    id={`notice-stunting-${notice.id}`}
+                    className={`p-4 rounded-[24px] border-2 flex items-start justify-between gap-3 shadow-card ${
+                      notice.status === 'merah'
+                        ? 'bg-red-light border-red/40 text-text'
+                        : 'bg-yellow-light border-yellow/40 text-text'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      {notice.status === 'merah' ? (
+                        <OctagonAlert
+                          size={24}
+                          strokeWidth={2}
+                          className="flex-shrink-0 mt-0.5 text-red"
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <TriangleAlert
+                          size={24}
+                          strokeWidth={2}
+                          className="flex-shrink-0 mt-0.5 text-yellow"
+                          aria-hidden="true"
+                        />
+                      )}
+                      <div>
+                        <p className="text-[16px] font-bold leading-tight">
+                          Hasil Sinkronisasi:{' '}
+                          <span className={notice.status === 'merah' ? 'text-red' : 'text-[#9A6F00]'}>
+                            {notice.status === 'merah' ? 'Status Merah (Perlu Rujukan)' : 'Status Kuning (Perlu Dipantau)'}
+                          </span>
+                        </p>
+                        <p className="text-[16px] text-text-muted mt-0.5">
+                          Balita <strong>{notice.childName}</strong> memerlukan tindak lanjut kader.
+                        </p>
+                        <button
+                          onClick={() => router.push('/kader/tindak-lanjut')}
+                          className="mt-2 text-[16px] font-bold text-primary underline cursor-pointer"
+                        >
+                          Lihat daftar tindak lanjut
+                        </button>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleDismissNotice(notice.id)}
+                      className="p-2 rounded-full hover:bg-black/10 transition-colors flex-shrink-0 cursor-pointer"
+                      aria-label="Tutup pemberitahuan"
+                    >
+                      <X size={20} strokeWidth={2} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Greeting Banner */}
+            <div>
+              <p className="text-[16px] text-teal font-bold uppercase tracking-wider">
+                Selamat Bertugas
+              </p>
+              <h1 className="text-[24px] font-bold text-text mt-0.5">
+                Halo, {userName}
+              </h1>
+              <p className="text-[16px] text-text-muted mt-1">
+                Pilih tugas pemantauan tumbuh kembang balita hari ini.
+              </p>
+            </div>
+
+            {/* Three Big Cards */}
+            <div className="flex flex-col gap-4">
+              {/* Card 1: Registrasi Balita */}
+              <Card
+                id="card-registrasi-balita"
+                padding="24"
+                className="cursor-pointer hover:border-slate-300 active:scale-[0.99] transition-all group min-h-[96px]"
+                onClick={() => router.push('/kader/anak/baru')}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-full bg-primary-selected text-primary flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0">
+                      <UserPlus size={32} strokeWidth={2} />
+                    </div>
+                    <div>
+                      <h2 className="text-[20px] font-semibold text-text leading-snug">
+                        Registrasi Balita
+                      </h2>
+                      <p className="text-[16px] text-text-muted mt-0.5">
+                        Daftar balita baru dengan NIK atau nama pengasuh
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight size={24} strokeWidth={2} className="text-text-muted group-hover:text-primary transition-colors flex-shrink-0" />
+                </div>
+              </Card>
+
+              {/* Card 2: Ukur Balita (Tugas Utama Antropometri) */}
+              <Card
+                id="card-ukur-balita"
+                padding="24"
+                className="cursor-pointer border-2 border-primary/30 bg-primary-selected/30 hover:border-primary active:scale-[0.99] transition-all group shadow-card min-h-[96px]"
+                onClick={() => router.push('/kader/anak')}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-full bg-primary text-white flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0 shadow-soft">
+                      <Ruler size={32} strokeWidth={2} />
+                    </div>
+                    <div>
+                      <span className="text-[16px] font-bold text-primary uppercase tracking-wider block">
+                        Tugas Posyandu
+                      </span>
+                      <h2 className="text-[20px] font-semibold text-text leading-snug">
+                        Ukur Balita
+                      </h2>
+                      <p className="text-[16px] text-text-muted mt-0.5">
+                        Catat berat, tinggi badan & hitung status WHO
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight size={24} strokeWidth={2} className="text-primary transition-colors flex-shrink-0" />
+                </div>
+              </Card>
+
+              {/* Card 3: Daftar Tindak Lanjut */}
+              <Card
+                id="card-tindak-lanjut"
+                padding="24"
+                className="cursor-pointer hover:border-slate-300 active:scale-[0.99] transition-all group min-h-[96px]"
+                onClick={() => router.push('/kader/tindak-lanjut')}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-full bg-yellow-light text-[#9A6F00] flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0">
+                      <ClipboardList size={32} strokeWidth={2} />
+                    </div>
+                    <div>
+                      <h2 className="text-[20px] font-semibold text-text leading-snug">
+                        Daftar Tindak Lanjut
+                      </h2>
+                      <p className="text-[16px] text-text-muted mt-0.5">
+                        Pantau balita kuning dan merah yang perlu rujukan
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight size={24} strokeWidth={2} className="text-text-muted group-hover:text-yellow transition-colors flex-shrink-0" />
+                </div>
+              </Card>
+            </div>
+          </>
         )}
-
-        {/* Greeting Banner */}
-        <div className="mb-6">
-          <p className="text-[16px] text-teal font-bold uppercase tracking-wider">
-            Selamat Bertugas
-          </p>
-          <h1 className="text-[24px] font-bold text-text mt-0.5">
-            Halo, {userName}
-          </h1>
-          <p className="text-[16px] text-text-muted mt-1">
-            Pilih tugas pemantauan tumbuh kembang balita hari ini.
-          </p>
-        </div>
-
-        {/* Three Big Cards */}
-        <div className="flex flex-col gap-4">
-          {/* Card 1: Registrasi Balita */}
-          <Card
-            id="card-registrasi-balita"
-            padding="24"
-            className="cursor-pointer hover:border-slate-300 active:scale-[0.99] transition-all group"
-            onClick={() => router.push('/kader/anak/baru')}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-full bg-primary-selected text-primary flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0">
-                  <UserPlus size={32} strokeWidth={2} />
-                </div>
-                <div>
-                  <h2 className="text-[20px] font-semibold text-text leading-snug">
-                    Registrasi Balita
-                  </h2>
-                  <p className="text-[16px] text-text-muted mt-0.5">
-                    Daftar balita baru dengan NIK atau identitas pengasuh
-                  </p>
-                </div>
-              </div>
-              <ChevronRight size={24} strokeWidth={2} className="text-text-muted group-hover:text-primary transition-colors flex-shrink-0" />
-            </div>
-          </Card>
-
-          {/* Card 2: Ukur Balita (Tugas Utama Antropometri) */}
-          <Card
-            id="card-ukur-balita"
-            padding="24"
-            className="cursor-pointer border-2 border-primary/30 bg-primary-selected/30 hover:border-primary active:scale-[0.99] transition-all group shadow-card"
-            onClick={() => router.push('/kader/anak')}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-full bg-primary text-white flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0 shadow-soft">
-                  <Ruler size={32} strokeWidth={2} />
-                </div>
-                <div>
-                  <span className="text-[14px] font-bold text-primary uppercase tracking-wider block">
-                    Tugas Posyandu
-                  </span>
-                  <h2 className="text-[20px] font-semibold text-text leading-snug">
-                    Ukur Balita
-                  </h2>
-                  <p className="text-[16px] text-text-muted mt-0.5">
-                    Input berat, tinggi badan & hitung Z-Score WHO
-                  </p>
-                </div>
-              </div>
-              <ChevronRight size={24} strokeWidth={2} className="text-primary transition-colors flex-shrink-0" />
-            </div>
-          </Card>
-
-          {/* Card 3: Daftar Tindak Lanjut */}
-          <Card
-            id="card-tindak-lanjut"
-            padding="24"
-            className="cursor-pointer hover:border-slate-300 active:scale-[0.99] transition-all group"
-            onClick={() => router.push('/kader/tindak-lanjut')}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-full bg-yellow-light text-yellow flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0">
-                  <ClipboardList size={32} strokeWidth={2} />
-                </div>
-                <div>
-                  <h2 className="text-[20px] font-semibold text-text leading-snug">
-                    Daftar Tindak Lanjut
-                  </h2>
-                  <p className="text-[16px] text-text-muted mt-0.5">
-                    Kasus kuning dan merah butuh pendampingan
-                  </p>
-                </div>
-              </div>
-              <ChevronRight size={24} strokeWidth={2} className="text-text-muted group-hover:text-yellow transition-colors flex-shrink-0" />
-            </div>
-          </Card>
-        </div>
       </div>
 
       {/* Bottom Information */}
-      <footer className="mt-8 pt-4 text-center border-t border-slate-100">
-        <p className="text-[12px] text-slate-400">
+      <footer className="mt-8 pt-4 text-center border-t border-border">
+        <p className="text-[16px] text-text-muted font-medium">
           StuntGuard • Posyandu ILP Ramah Kader
         </p>
       </footer>
 
-      {/* Logout Warning Modal for Pending Items (Requirement 7) */}
+      {/* Logout Warning Modal for Pending Items */}
       {showLogoutModal && (
         <div
           id="modal-logout-warning"
@@ -417,38 +434,38 @@ function KaderHomeContent() {
           role="dialog"
           aria-modal="true"
         >
-          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 text-center">
+          <div className="bg-white rounded-[24px] p-6 max-w-sm w-full shadow-2xl border border-border text-center">
             <div className="w-16 h-16 rounded-full bg-yellow-light text-yellow flex items-center justify-center mx-auto mb-4">
               <TriangleAlert size={32} strokeWidth={2} />
             </div>
 
-            <h3 className="text-lg font-extrabold text-slate-900 mb-2">
+            <h3 className="text-[20px] font-bold text-text mb-2">
               Peringatan Keluar Akun
             </h3>
 
-            <p className="text-sm text-slate-600 mb-1 leading-relaxed">
+            <p className="text-[16px] text-text-muted mb-2 leading-relaxed">
               Masih ada data belum terkirim. Keluar akan menghapusnya.
             </p>
-            <p className="text-xs text-amber-700 bg-amber-50 p-2 rounded-xl mb-6 font-semibold">
+            <p className="text-[16px] text-[#9A6F00] bg-yellow-light/60 p-3 rounded-2xl mb-6 font-semibold">
               {pendingOutboxCount} data antrean di HP ini akan terhapus demi keamanan.
             </p>
 
-            <div className="flex gap-3">
-              <Button
-                id="btn-cancel-logout"
-                variant="secondary"
-                className="flex-1"
-                onClick={() => setShowLogoutModal(false)}
-              >
-                Batal
-              </Button>
+            <div className="flex flex-col gap-2.5">
               <Button
                 id="btn-confirm-logout"
                 variant="danger"
-                className="flex-1"
+                size="kader"
                 onClick={executeLogout}
               >
                 Tetap Keluar
+              </Button>
+              <Button
+                id="btn-cancel-logout"
+                variant="secondary"
+                size="kader"
+                onClick={() => setShowLogoutModal(false)}
+              >
+                Batal
               </Button>
             </div>
           </div>
@@ -460,7 +477,15 @@ function KaderHomeContent() {
 
 export default function KaderHomePage() {
   return (
-    <Suspense fallback={<div className="min-h-screen px-4 py-16 text-center text-slate-500">Memuat beranda...</div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen px-4 py-8 max-w-[480px] mx-auto w-full space-y-6">
+          <div className="h-14 w-full bg-slate-200/80 rounded-2xl animate-pulse" />
+          <div className="h-32 w-full bg-slate-200/80 rounded-[24px] animate-pulse" />
+          <div className="h-32 w-full bg-slate-200/80 rounded-[24px] animate-pulse" />
+        </div>
+      }
+    >
       <KaderHomeContent />
     </Suspense>
   );

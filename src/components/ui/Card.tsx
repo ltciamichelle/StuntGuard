@@ -3,7 +3,7 @@ import React from 'react';
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   selected?: boolean;
   variant?: 'default' | 'selected' | 'alert-red' | 'warning-yellow' | 'success-green';
-  padding?: 'none' | '12' | '16' | '24' | '32' | 'sm' | 'md' | 'lg';
+  padding?: 'none' | '12' | '16' | '20' | '24' | '32' | 'sm' | 'md' | 'lg' | 'xl';
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -17,16 +17,18 @@ export const Card: React.FC<CardProps> = ({
   // Radius: 24px, Shadow: soft shadow, Border: #E4E7EB
   const baseStyles = 'rounded-[24px] transition-all duration-200 overflow-hidden';
 
-  // Spacing scale: 4, 8, 12, 16, 24, 32
+  // Spacing scale: 4, 8, 12, 16, 20, 24, 32
   const paddingStyles: Record<string, string> = {
     none: 'p-0',
     '12': 'p-3',
     '16': 'p-4',
+    '20': 'p-5',
     '24': 'p-6',
     '32': 'p-8',
     sm: 'p-3',
     md: 'p-4',
     lg: 'p-6',
+    xl: 'p-6',
   };
 
   const effectiveVariant = selected ? 'selected' : variant;

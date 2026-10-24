@@ -10,3 +10,4 @@ export * from './EmptyState';
 export * from './Skeleton';
 export * from './Toast';
 export * from './ConfirmDialog';
+export * from './ErrorState';

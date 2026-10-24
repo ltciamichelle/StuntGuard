@@ -1,7 +1,7 @@
 import React from 'react';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'critical' | 'alert-white' | 'danger';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'critical' | 'alert-white' | 'danger' | 'alert-red';
   size?: 'kader' | 'pengasuh' | 'ibu' | 'compact';
   fullWidth?: boolean;
   icon?: React.ReactNode;
@@ -44,6 +44,7 @@ export const Button: React.FC<ButtonProps> = ({
     critical: 'bg-white text-red border-2 border-white shadow-soft hover:bg-red-50 active:bg-red-100',
     // Aliases for backwards compatibility
     'alert-white': 'bg-white text-red border-2 border-white shadow-soft hover:bg-red-50 active:bg-red-100',
+    'alert-red': 'bg-red text-white hover:bg-[#c92f32] shadow-soft',
     danger: 'bg-red text-white hover:bg-[#c92f32] shadow-soft',
   };
 

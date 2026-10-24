@@ -3,11 +3,19 @@ import React from 'react';
 export interface SkeletonProps {
   className?: string;
   variant?: 'rectangular' | 'circular' | 'card' | 'input' | 'button';
+  height?: string | number;
+  width?: string | number;
+  rounded?: string;
+  style?: React.CSSProperties;
 }
 
 export const Skeleton: React.FC<SkeletonProps> = ({
   className = '',
   variant = 'rectangular',
+  height,
+  width,
+  rounded,
+  style,
 }) => {
   const variantStyles = {
     rectangular: 'rounded-[16px] h-6 w-full',
@@ -17,9 +25,17 @@ export const Skeleton: React.FC<SkeletonProps> = ({
     button: 'rounded-full h-14 min-h-[56px] w-full',
   };
 
+  const customStyle: React.CSSProperties = {
+    ...style,
+    ...(height ? { height } : {}),
+    ...(width ? { width } : {}),
+    ...(rounded ? { borderRadius: rounded } : {}),
+  };
+
   return (
     <div
       aria-hidden="true"
+      style={customStyle}
       className={`animate-pulse bg-slate-200/80 ${variantStyles[variant]} ${className}`}
     />
   );

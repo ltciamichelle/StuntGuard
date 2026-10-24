@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { StatusBadge } from '@/components/ui';
+import { StatusBadge, Button, Skeleton, ErrorState } from '@/components/ui';
 import { SyncStatusBadge } from '@/components/SyncStatusBadge';
 import { calculateAgeInMonths, formatIndonesianDate } from '@/lib/utils';
 import {
@@ -25,7 +25,14 @@ import {
   Clock,
   PieChart,
   ShieldAlert,
+  ShieldCheck,
+  ChevronRight,
 } from 'lucide-react';
+import {
+  computePosyanduQualityStats,
+  TEST_QUALITY_CHILDREN,
+  TEST_QUALITY_MEASUREMENTS,
+} from '@/lib/kualitas-config';
 
 interface ChildWithLatestMeasurement {
   child: Anak;
@@ -137,6 +144,7 @@ const DEFAULT_CHILDREN: Anak[] = [
     tgl_lahir: '2025-03-22',
     jenis_kelamin: 'P',
   },
+  ...TEST_QUALITY_CHILDREN,
 ];
 
 const DEFAULT_MEASUREMENTS: Pengukuran[] = [
@@ -238,6 +246,7 @@ const DEFAULT_MEASUREMENTS: Pengukuran[] = [
     z_bbu: -0.5,
     status: 'hijau',
   },
+  ...TEST_QUALITY_MEASUREMENTS,
 ];
 
 const DEFAULT_TINDAK_LANJUT: TindakLanjut[] = [
@@ -300,6 +309,7 @@ export default function DesaDashboardPage() {
   const [userRole, setUserRole] = useState<string>('Bidan Desa');
   const [desaName, setDesaName] = useState<string>('Desa Sukamaju');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Raw Data State (Initialized with solid defaults)
   const [posyanduList, setPosyanduList] = useState<Posyandu[]>(DEFAULT_POSYANDUS);
@@ -328,6 +338,7 @@ export default function DesaDashboardPage() {
 
   async function loadDashboardData() {
     setLoading(true);
+    setError(null);
     try {
       const isRealSupabase =
         process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -469,8 +480,10 @@ export default function DesaDashboardPage() {
           }
         }
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error loading desa dashboard:', err);
+      const errMsg = err instanceof Error ? err.message : 'Terjadi kendala saat memuat data dasbor desa.';
+      setError(errMsg);
     } finally {
       setLoading(false);
     }
@@ -601,6 +614,40 @@ export default function DesaDashboardPage() {
     };
   }, [childrenList, measurementsList, tindakLanjutMap, selectedPosyanduId, selectedMonth, posyanduMap]);
 
+  // Data Quality Summary calculation for dashboard card
+  const qualitySummary = useMemo(() => {
+    const targetPosyandus =
+      selectedPosyanduId !== 'all'
+        ? posyanduList.filter((p) => p.id === parseInt(selectedPosyanduId, 10))
+        : posyanduList;
+
+    let total = 0;
+    let clean = 0;
+    let flagged = 0;
+
+    targetPosyandus.forEach((p) => {
+      const stats = computePosyanduQualityStats(
+        p.id,
+        p.nama,
+        measurementsList,
+        childrenList,
+        selectedMonth
+      );
+      total += stats.totalMeasurements;
+      clean += stats.cleanMeasurements;
+      flagged += stats.flaggedMeasurements;
+    });
+
+    const score = total > 0 ? Math.round((clean / total) * 100) : 100;
+
+    return {
+      score,
+      total,
+      clean,
+      flaggedCount: flagged,
+    };
+  }, [posyanduList, measurementsList, childrenList, selectedMonth, selectedPosyanduId]);
+
   // Export function for Rembuk Stunting (Excel .xlsx and PDF)
   const handleExportRembuk = async (format: 'xlsx' | 'pdf') => {
     setIsExporting(format);
@@ -666,6 +713,74 @@ export default function DesaDashboardPage() {
     }
     return list;
   }, []);
+
+  if (loading) {
+    return (
+      <div className="w-full min-h-screen bg-pageBg text-slate-900">
+        <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
+          <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <Skeleton className="w-11 h-11 rounded-2xl" />
+              <div className="space-y-1.5">
+                <Skeleton className="w-24 h-4 rounded-full" />
+                <Skeleton className="w-36 h-6 rounded-md" />
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Skeleton className="w-24 h-10 rounded-full" />
+              <Skeleton className="w-10 h-10 rounded-2xl" />
+            </div>
+          </div>
+        </header>
+
+        <main className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+          <Skeleton className="w-full h-20 rounded-3xl" />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Skeleton className="h-40 rounded-3xl" />
+              <Skeleton className="h-40 rounded-3xl" />
+              <Skeleton className="h-40 rounded-3xl" />
+            </div>
+            <div className="lg:col-span-5">
+              <Skeleton className="h-40 rounded-3xl" />
+            </div>
+          </div>
+          <Skeleton className="w-full h-24 rounded-3xl" />
+          <Skeleton className="w-full h-64 rounded-3xl" />
+        </main>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full min-h-screen bg-pageBg text-slate-900">
+        <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
+          <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <img
+                src="/logo.png"
+                alt="StuntGuard Logo"
+                className="w-11 h-11 object-contain rounded-2xl bg-white p-1 border border-slate-200/90 shadow-xs"
+              />
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight">
+                {desaName}
+              </h1>
+            </div>
+            <SyncStatusBadge />
+          </div>
+        </header>
+
+        <main className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <ErrorState
+            title="Gagal memuat data dasbor desa"
+            message={error}
+            onRetry={loadDashboardData}
+          />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full min-h-screen bg-pageBg text-slate-900">
@@ -773,16 +888,16 @@ export default function DesaDashboardPage() {
             </span>
           </div>
 
-          {/* Button: Ekspor untuk Rembuk Stunting offering Excel (.xlsx) and PDF */}
+          {/* Button: Ekspor data rembuk stunting offering Excel (.xlsx) and PDF */}
           <div className="relative flex-shrink-0">
             <button
               type="button"
               id="btn-ekspor-rembuk"
               onClick={() => setShowExportMenu(!showExportMenu)}
-              className="py-2.5 px-5 rounded-full bg-slateTeal hover:bg-slateTeal-dark text-white font-extrabold text-[14px] flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.98] cursor-pointer"
+              className="py-3 px-5 rounded-2xl bg-slateTeal hover:bg-slateTeal-dark text-white font-extrabold text-[15px] flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slateTeal cursor-pointer"
             >
               <Download size={18} />
-              <span>Ekspor untuk Rembuk Stunting</span>
+              <span>Ekspor data rembuk stunting</span>
             </button>
 
             {/* Dropdown Options: Excel (.xlsx) and PDF (.pdf) */}
@@ -797,11 +912,11 @@ export default function DesaDashboardPage() {
                   className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200 p-2 z-40 animate-in fade-in slide-in-from-top-2 duration-150"
                 >
                   <div className="px-3 py-2 border-b border-slate-100">
-                    <span className="text-[11px] font-black uppercase tracking-wider text-slateTeal block">
-                      Pilih Format Berkas
+                    <span className="text-[12px] font-black uppercase tracking-wider text-slateTeal block">
+                      Pilih format berkas
                     </span>
                     <span className="text-[12px] text-slate-500 font-medium">
-                      Sesuai filter ({selectedMonth}, {selectedPosyanduId === 'all' ? 'Semua Posyandu' : 'Posyandu Terpilih'})
+                      Sesuai filter ({selectedMonth}, {selectedPosyanduId === 'all' ? 'Semua Posyandu' : 'Posyandu terpilih'})
                     </span>
                   </div>
 
@@ -810,17 +925,17 @@ export default function DesaDashboardPage() {
                     id="btn-unduh-excel"
                     onClick={() => handleExportRembuk('xlsx')}
                     disabled={isExporting !== null}
-                    className="w-full text-left p-3 rounded-xl hover:bg-emerald-50 text-slate-800 hover:text-emerald-900 transition-colors flex items-start gap-3 cursor-pointer group mt-1"
+                    className="w-full text-left p-3 rounded-xl hover:bg-emerald-50 text-slate-800 hover:text-emerald-900 transition-colors flex items-start gap-3 cursor-pointer group mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
                   >
                     <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs flex-shrink-0 group-hover:scale-105 transition-transform">
                       XLS
                     </div>
                     <div>
-                      <span className="text-[13px] font-extrabold text-slate-900 block group-hover:text-emerald-900">
-                        Unduh Excel (.xlsx)
+                      <span className="text-[14px] font-extrabold text-slate-900 block group-hover:text-emerald-900">
+                        Unduh berkas Excel (.xlsx)
                       </span>
-                      <span className="text-[11px] text-slate-500 leading-tight block mt-0.5">
-                        3 Sheet: Ringkasan, Daftar Anak, Tindak Lanjut
+                      <span className="text-[12px] text-slate-500 leading-tight block mt-0.5">
+                        3 lembar kerja: ringkasan, daftar anak, tindak lanjut
                       </span>
                     </div>
                   </button>
@@ -830,17 +945,17 @@ export default function DesaDashboardPage() {
                     id="btn-unduh-pdf"
                     onClick={() => handleExportRembuk('pdf')}
                     disabled={isExporting !== null}
-                    className="w-full text-left p-3 rounded-xl hover:bg-rose-50 text-slate-800 hover:text-rose-900 transition-colors flex items-start gap-3 cursor-pointer group mt-1"
+                    className="w-full text-left p-3 rounded-xl hover:bg-rose-50 text-slate-800 hover:text-rose-900 transition-colors flex items-start gap-3 cursor-pointer group mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-600"
                   >
                     <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-xs flex-shrink-0 group-hover:scale-105 transition-transform">
                       PDF
                     </div>
                     <div>
-                      <span className="text-[13px] font-extrabold text-slate-900 block group-hover:text-rose-900">
-                        Unduh PDF (.pdf)
+                      <span className="text-[14px] font-extrabold text-slate-900 block group-hover:text-rose-900">
+                        Unduh berkas PDF (.pdf)
                       </span>
-                      <span className="text-[11px] text-slate-500 leading-tight block mt-0.5">
-                        Format cetak A4 Laporan Rembuk Stunting
+                      <span className="text-[12px] text-slate-500 leading-tight block mt-0.5">
+                        Format cetak A4 laporan rembuk stunting
                       </span>
                     </div>
                   </button>
@@ -1102,6 +1217,81 @@ export default function DesaDashboardPage() {
           </div>
         </section>
 
+        {/* Section 1.5: Summary Card "Kualitas Data" (Task 2) */}
+        <section
+          id="card-summary-kualitas-data"
+          className="bg-white rounded-3xl border-2 border-slate-200/80 shadow-soft p-5 hover:border-slate-300 transition-all"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-4">
+              <div
+                className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-xs ${
+                  qualitySummary.score < 90
+                    ? 'bg-amber-100 text-[#9A6F00]'
+                    : 'bg-emerald-100 text-status-green'
+                }`}
+              >
+                {qualitySummary.score < 90 ? (
+                  <ShieldAlert size={28} strokeWidth={2.2} />
+                ) : (
+                  <ShieldCheck size={28} strokeWidth={2.2} />
+                )}
+              </div>
+
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slateTeal">
+                    Audit Kualitas Data Antropometri
+                  </span>
+                  {qualitySummary.score < 90 ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-100 text-[#9A6F00] border border-amber-200">
+                      <AlertTriangle size={12} />
+                      Perlu Perhatian
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-100 text-status-green border border-emerald-200">
+                      <CheckCircle2 size={12} />
+                      Kualitas Baik
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-baseline gap-2 mt-1">
+                  <h3 className="text-[20px] font-black text-slate-900 leading-tight">
+                    Skor Kualitas:{' '}
+                    <span
+                      className={
+                        qualitySummary.score < 90 ? 'text-[#9A6F00]' : 'text-status-green'
+                      }
+                    >
+                      {qualitySummary.score}%
+                    </span>
+                  </h3>
+                  <span className="text-[13px] text-slate-500 font-semibold">
+                    • {qualitySummary.flaggedCount} data pengukuran perlu dicek
+                  </span>
+                </div>
+
+                <p className="text-[13px] text-slate-500 mt-0.5">
+                  Mendeteksi data janggal (penurunan tinggi badan, lonjakan berat &gt;30%, cara ukur tidak sesuai umur, atau data duplikat).
+                </p>
+              </div>
+            </div>
+
+            <Button
+              variant="secondary"
+              size="compact"
+              fullWidth={false}
+              onClick={() => router.push('/desa/kualitas')}
+              icon={<ChevronRight size={18} />}
+              iconPosition="right"
+              className="text-[14px] font-bold self-start sm:self-center whitespace-nowrap flex-shrink-0 cursor-pointer"
+            >
+              Lihat Analisis Kualitas
+            </Button>
+          </div>
+        </section>
+
         {/* Section 2: Table "Anak Perlu Perhatian" (Red first, then Yellow) */}
         <section className="bg-white rounded-3xl border-2 border-slate-200/80 shadow-soft overflow-hidden">
           <div className="p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1134,30 +1324,101 @@ export default function DesaDashboardPage() {
             </div>
           </div>
 
-          {/* Table Container */}
-          <div className="overflow-x-auto">
+          {/* Table Container for Desktop, Card List for Mobile */}
+          <div>
             {processedData.attentionChildren.length === 0 ? (
               <div className="py-12 px-4 text-center text-slate-500">
                 <CheckCircle2 size={36} className="text-status-green mx-auto mb-2" />
                 <h3 className="text-[16px] font-extrabold text-slate-800">
-                  Kondisi Sangat Baik!
+                  Kondisi sangat baik!
                 </h3>
                 <p className="text-[13px] text-slate-500 mt-1">
                   Tidak ada balita berstatus Merah atau Kuning pada bulan dan wilayah yang dipilih.
                 </p>
               </div>
             ) : (
-              <table className="w-full text-left border-collapse text-[13px]">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-slateTeal uppercase text-[11px] font-black tracking-wider">
-                    <th className="py-3 px-4">Nama Balita</th>
-                    <th className="py-3 px-4">Posyandu</th>
-                    <th className="py-3 px-4">Status Gizi</th>
-                    <th className="py-3 px-4">Jadwal Kunjungan Ulang</th>
-                    <th className="py-3 px-4">Status Rujukan</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
+              <>
+                {/* Desktop view: Table with sticky header */}
+                <div className="hidden md:block overflow-x-auto max-h-[500px]">
+                  <table className="w-full text-left border-collapse text-[13px]">
+                    <thead className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200 shadow-xs">
+                      <tr className="text-slateTeal uppercase text-[11px] font-black tracking-wider">
+                        <th className="py-3 px-4">Nama Balita</th>
+                        <th className="py-3 px-4">Posyandu</th>
+                        <th className="py-3 px-4">Status Gizi</th>
+                        <th className="py-3 px-4">Jadwal Kunjungan Ulang</th>
+                        <th className="py-3 px-4">Status Rujukan</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {processedData.attentionChildren.map((item) => {
+                        const c = item.child;
+                        const m = item.latestMeasurement;
+                        const tl = item.tindakLanjut;
+                        const ageInMonths = calculateAgeInMonths(c.tgl_lahir);
+
+                        return (
+                          <tr
+                            key={c.id}
+                            className="hover:bg-slate-50/80 transition-colors"
+                          >
+                            {/* Nama */}
+                            <td className="py-3.5 px-4 font-bold text-slate-900">
+                              <div className="flex items-center gap-2.5">
+                                <span className="text-lg">
+                                  {c.jenis_kelamin === 'L' ? '👦' : '👧'}
+                                </span>
+                                <div>
+                                  <span className="block text-[14px] font-extrabold text-slate-900">
+                                    {c.nama}
+                                  </span>
+                                  <span className="text-[12px] text-slate-500 font-normal">
+                                    Usia: {ageInMonths} bln • Pengasuh: {c.nama_pengasuh || c.nama_ibu}
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Posyandu */}
+                            <td className="py-3.5 px-4 font-semibold text-slate-700">
+                              {item.posyanduName}
+                            </td>
+
+                            {/* Status Gizi Badge */}
+                            <td className="py-3.5 px-4">
+                              <StatusBadge
+                                status={m?.status || 'kuning'}
+                                size="sm"
+                              />
+                            </td>
+
+                            {/* Tanggal Kunjungan Ulang */}
+                            <td className="py-3.5 px-4 text-slate-800 font-bold">
+                              {tl?.tgl_kunjungan_ulang ? (
+                                <span className="inline-flex items-center gap-1.5">
+                                  <Calendar size={14} className="text-slate-400" />
+                                  {formatIndonesianDate(tl.tgl_kunjungan_ulang)}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 font-normal">
+                                  Belum dijadwalkan
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Status Rujukan */}
+                            <td className="py-3.5 px-4">
+                              {renderStatusRujukanPill(tl?.status_rujukan)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile view: Stacked card list */}
+                <div className="md:hidden divide-y divide-slate-100">
                   {processedData.attentionChildren.map((item) => {
                     const c = item.child;
                     const m = item.latestMeasurement;
@@ -1165,63 +1426,59 @@ export default function DesaDashboardPage() {
                     const ageInMonths = calculateAgeInMonths(c.tgl_lahir);
 
                     return (
-                      <tr
-                        key={c.id}
-                        className="hover:bg-slate-50/80 transition-colors"
-                      >
-                        {/* Nama */}
-                        <td className="py-3.5 px-4 font-bold text-slate-900">
+                      <div key={c.id} className="p-4 space-y-3">
+                        <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-2.5">
-                            <span className="text-lg">
+                            <span className="text-xl">
                               {c.jenis_kelamin === 'L' ? '👦' : '👧'}
                             </span>
                             <div>
-                              <span className="block text-[14px] font-extrabold text-slate-900">
+                              <span className="block text-[16px] font-extrabold text-slate-900 leading-tight">
                                 {c.nama}
                               </span>
-                              <span className="text-[11px] text-slate-500 font-normal">
+                              <span className="text-[13px] text-slate-600 block mt-0.5">
                                 Usia: {ageInMonths} bln • Pengasuh: {c.nama_pengasuh || c.nama_ibu}
+                              </span>
+                              <span className="text-[12px] font-semibold text-slateTeal block mt-0.5">
+                                {item.posyanduName}
                               </span>
                             </div>
                           </div>
-                        </td>
-
-                        {/* Posyandu */}
-                        <td className="py-3.5 px-4 font-semibold text-slate-700">
-                          {item.posyanduName}
-                        </td>
-
-                        {/* Status Gizi Badge */}
-                        <td className="py-3.5 px-4">
                           <StatusBadge
                             status={m?.status || 'kuning'}
                             size="sm"
                           />
-                        </td>
+                        </div>
 
-                        {/* Tanggal Kunjungan Ulang */}
-                        <td className="py-3.5 px-4 text-slate-800 font-bold">
-                          {tl?.tgl_kunjungan_ulang ? (
-                            <span className="inline-flex items-center gap-1.5">
-                              <Calendar size={14} className="text-slate-400" />
-                              {formatIndonesianDate(tl.tgl_kunjungan_ulang)}
+                        <div className="flex items-center justify-between text-[13px] pt-1">
+                          <div className="text-slate-700">
+                            <span className="text-[11px] uppercase font-bold text-slate-500 block">
+                              Kunjungan ulang
                             </span>
-                          ) : (
-                            <span className="text-slate-400 font-normal">
-                              Belum dijadwalkan
-                            </span>
-                          )}
-                        </td>
+                            {tl?.tgl_kunjungan_ulang ? (
+                              <span className="inline-flex items-center gap-1 font-bold text-slate-800 mt-0.5">
+                                <Calendar size={14} className="text-slate-400" />
+                                {formatIndonesianDate(tl.tgl_kunjungan_ulang)}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400">Belum dijadwalkan</span>
+                            )}
+                          </div>
 
-                        {/* Status Rujukan */}
-                        <td className="py-3.5 px-4">
-                          {renderStatusRujukanPill(tl?.status_rujukan)}
-                        </td>
-                      </tr>
+                          <div>
+                            <span className="text-[11px] uppercase font-bold text-slate-500 block text-right">
+                              Status rujukan
+                            </span>
+                            <div className="mt-0.5">
+                              {renderStatusRujukanPill(tl?.status_rujukan)}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     );
                   })}
-                </tbody>
-              </table>
+                </div>
+              </>
             )}
           </div>
         </section>
