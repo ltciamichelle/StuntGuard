@@ -262,6 +262,21 @@ export const SyncStatusBadge: React.FC<{ className?: string }> = ({ className = 
               </div>
             )}
 
+            {/* Server Fetch Error Detail (Requirement 3: Show details only in sync detail screen) */}
+            {syncState.lastFetchError && (
+              <div className="p-3.5 bg-yellow-light/60 border border-yellow/40 rounded-[16px] text-[13px] space-y-1">
+                <div className="font-bold text-[#9A6F00] flex items-center gap-1.5">
+                  <CloudAlert size={16} />
+                  <span>Detail Masalah Tarik Data Server:</span>
+                </div>
+                <div className="text-text space-y-0.5 font-mono text-[11px] bg-white/70 p-2 rounded-xl">
+                  <p><strong>Query:</strong> {syncState.lastFetchError.query}</p>
+                  <p><strong>Status:</strong> {syncState.lastFetchError.status}</p>
+                  <p><strong>Pesan:</strong> {syncState.lastFetchError.message}</p>
+                </div>
+              </div>
+            )}
+
             {/* Action Buttons */}
             <div className="pt-2 flex flex-col gap-2">
               <Button

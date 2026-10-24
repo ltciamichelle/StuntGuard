@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button, Card } from '@/components/ui';
 import { Lock, Mail, TriangleAlert } from 'lucide-react';
+import { verifyAndEnforceCacheSafety } from '@/lib/cacheSafety';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -83,6 +84,9 @@ export default function LoginPage() {
           }
 
           if (data.user) {
+            await verifyAndEnforceCacheSafety(data.user.id);
+            document.cookie = 'sg_user_role=pengasuh; path=/; max-age=86400; SameSite=Lax';
+
             await supabase.from('profiles').upsert({
               id: data.user.id,
               nama: namaLengkap.trim(),
@@ -105,7 +109,9 @@ export default function LoginPage() {
             posyandu_id: null,
             desa_id: 1,
           };
+          await verifyAndEnforceCacheSafety(sessionPayload.id);
           document.cookie = `sg_dev_session=${encodeURIComponent(JSON.stringify(sessionPayload))}; path=/; max-age=86400; SameSite=Lax`;
+          document.cookie = 'sg_user_role=pengasuh; path=/; max-age=86400; SameSite=Lax';
           router.push('/keluarga');
           router.refresh();
           return;
@@ -129,13 +135,16 @@ export default function LoginPage() {
           }
 
           if (data.user) {
+            await verifyAndEnforceCacheSafety(data.user.id);
+
             const { data: profile } = await supabase
               .from('profiles')
               .select('*')
               .eq('id', data.user.id)
               .single();
 
-            const role = profile?.role || data.user.user_metadata?.role;
+            const role = profile?.role || data.user.user_metadata?.role || 'pengasuh';
+            document.cookie = `sg_user_role=${role}; path=/; max-age=86400; SameSite=Lax`;
 
             if (role === 'kader') {
               router.push('/kader');
@@ -168,7 +177,9 @@ export default function LoginPage() {
               posyandu_id: posyanduId,
               desa_id: 1,
             };
+            await verifyAndEnforceCacheSafety(sessionPayload.id);
             document.cookie = `sg_dev_session=${encodeURIComponent(JSON.stringify(sessionPayload))}; path=/; max-age=86400; SameSite=Lax`;
+            document.cookie = `sg_user_role=${testAccount.role}; path=/; max-age=86400; SameSite=Lax`;
 
             if (testAccount.role === 'kader') {
               router.push('/kader');

@@ -15,7 +15,9 @@ import {
   User, 
   TriangleAlert,
   TrendingUp,
+  Ruler,
 } from 'lucide-react';
+import { verifyAndEnforceCacheSafety } from '@/lib/cacheSafety';
 
 // Skenario data contoh balita awal untuk fallback lokal / demo
 const FALLBACK_CHILDREN: Anak[] = [
@@ -97,6 +99,34 @@ export default function ChildListPage() {
     setLoading(true);
     setErrorMsg('');
 
+    // 0. Resolve current user ID and enforce cache safety: never show cached data before user id has been checked
+    let currentUserId = '';
+    const isRealSupabase =
+      process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project') &&
+      !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
+
+    if (isRealSupabase) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) currentUserId = user.id;
+      } catch {}
+    }
+
+    if (!currentUserId && typeof document !== 'undefined') {
+      const match = document.cookie.match(/sg_dev_session=([^;]+)/);
+      if (match) {
+        try {
+          const parsed = JSON.parse(decodeURIComponent(match[1]));
+          if (parsed?.id) currentUserId = parsed.id;
+        } catch {}
+      }
+    }
+
+    if (currentUserId) {
+      await verifyAndEnforceCacheSafety(currentUserId);
+    }
+
     // 1. Determine user posyandu_id from cache, session, or online profile
     let userPosyanduId: number = getDevSessionPosyanduId();
     try {
@@ -106,7 +136,7 @@ export default function ChildListPage() {
       }
     } catch {}
 
-    // 2. Read immediately from local IndexedDB (Dexie anak_cache)
+    // 2. Read from local IndexedDB (Dexie anak_cache) only after user id check
     try {
       const localCached = await db.anak_cache.toArray();
       if (localCached.length > 0) {
@@ -132,11 +162,6 @@ export default function ChildListPage() {
 
     // 3. Whenever online, refresh from server
     try {
-      const isRealSupabase =
-        process.env.NEXT_PUBLIC_SUPABASE_URL &&
-        !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project') &&
-        !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
-
       if (isRealSupabase && navigator.onLine) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
@@ -159,19 +184,48 @@ export default function ChildListPage() {
           query = query.eq('posyandu_id', userPosyanduId);
         }
 
-        const { data, error } = await query;
+        const { data, error, status, statusText } = await query;
 
         if (error) {
-          console.warn('Error fetching fresh anak from server:', error);
-          setErrorMsg('Gagal menyinkronkan data terbaru dari server.');
+          const fullQuery = `supabase.from('anak').select('*')${userPosyanduId ? `.eq('posyandu_id', ${userPosyanduId})` : ''}`;
+          console.error('[Sync Error anak]:', {
+            query: fullQuery,
+            status: status || 400,
+            statusText: statusText || 'Error',
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code,
+          });
+
+          syncEngine.setLastFetchError({
+            query: fullQuery,
+            status: status || 400,
+            message: error.message,
+            time: new Date().toISOString(),
+          });
+
+          // Simple banner text required by prompt
+          setErrorMsg('Data terbaru belum bisa diambil. Coba lagi.');
         } else if (data && data.length > 0) {
           // Refresh local Dexie cache
           await db.anak_cache.bulkPut(data);
           setChildrenList(data);
         }
       }
-    } catch (err) {
-      console.warn('Network fetch error (running offline):', err);
+    } catch (err: any) {
+      console.error('[Sync Error anak network]:', {
+        query: `supabase.from('anak').select('*')`,
+        status: 'NETWORK_EXCEPTION',
+        message: err?.message || 'Gagal tersambung ke jaringan',
+      });
+      syncEngine.setLastFetchError({
+        query: `supabase.from('anak').select('*')`,
+        status: 'NETWORK_EXCEPTION',
+        message: err?.message || 'Gagal tersambung ke jaringan',
+        time: new Date().toISOString(),
+      });
+      setErrorMsg('Data terbaru belum bisa diambil. Coba lagi.');
     } finally {
       setLoading(false);
     }
@@ -313,69 +367,66 @@ export default function ChildListPage() {
                   key={anak.id}
                   padding="16"
                   id={`card-anak-${anak.id}`}
-                  className="cursor-pointer hover:border-primary/40 active:scale-[0.99] transition-all group min-h-[96px]"
-                  onClick={() => router.push(`/kader/ukur/${anak.id}`)}
+                  className="border-2 border-border hover:border-primary/40 transition-all shadow-soft space-y-2.5"
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3.5">
-                      {/* Avatar Icon with Gender Indicator */}
-                      <div
-                        className={`w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 ${
-                          isBoy
-                            ? 'bg-teal-light text-teal'
-                            : 'bg-primary-selected text-primary'
-                        }`}
-                      >
-                        <User size={28} strokeWidth={2} />
-                      </div>
-
-                      <div>
-                        {/* Child Name */}
-                        <h2 className="text-[18px] font-bold text-text group-hover:text-primary transition-colors leading-snug">
-                          {anak.nama}
-                        </h2>
-
-                        {/* Age in Months (calculated from tgl_lahir) */}
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[16px] font-bold text-text">
-                            {ageInMonths} Bulan
-                          </span>
-                          <span className="text-border">•</span>
-                          <span className="text-[16px] text-text-muted">
-                            {anak.jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan'}
-                          </span>
-                        </div>
-
-                        {/* Caregiver Name */}
-                        <p className="text-[16px] text-text-muted mt-0.5">
-                          Pengasuh: <strong className="text-text font-semibold">{anak.nama_pengasuh}</strong>
-                        </p>
-                      </div>
+                  {/* Row 1: Child Name with Gender Avatar */}
+                  <div className="flex items-center gap-2.5">
+                    <div
+                      className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
+                        isBoy
+                          ? 'bg-teal-light text-teal'
+                          : 'bg-primary-selected text-primary'
+                      }`}
+                    >
+                      <User size={20} strokeWidth={2} />
                     </div>
+                    <h2 className="text-[17px] font-extrabold text-text truncate leading-tight">
+                      {anak.nama}
+                    </h2>
+                  </div>
 
-                    <div className="flex flex-col items-end gap-2.5 flex-shrink-0">
-                      <div className="flex items-center gap-1">
-                        <span className="text-[16px] font-bold text-primary hidden group-hover:inline">
-                          Ukur
-                        </span>
-                        <ChevronRight size={24} strokeWidth={2} className="text-text-muted group-hover:text-primary transition-colors" />
-                      </div>
+                  {/* Row 2: Age and Gender on one line (No wrapping inside "18 Bulan" or "Laki-laki") */}
+                  <div className="flex items-center gap-2 text-[14px] text-text whitespace-nowrap pl-11">
+                    <span className="font-bold whitespace-nowrap">{ageInMonths} Bulan</span>
+                    <span className="text-border">•</span>
+                    <span className="text-text-muted whitespace-nowrap">
+                      {isBoy ? 'Laki-laki' : 'Perempuan'}
+                    </span>
+                  </div>
 
-                      {/* Small 'Lihat kurva' button */}
-                      <button
-                        type="button"
-                        id={`btn-lihat-kurva-${anak.id}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          router.push(`/kader/anak/${anak.id}`);
-                        }}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-text text-[15px] font-bold border border-border transition-colors cursor-pointer min-h-[44px]"
-                        title="Lihat grafik kurva pertumbuhan WHO"
-                      >
-                        <TrendingUp size={18} strokeWidth={2} className="text-teal" />
-                        <span>Lihat kurva</span>
-                      </button>
-                    </div>
+                  {/* Row 3: Pengasuh Name */}
+                  <p className="text-[14px] text-text-muted truncate pl-11">
+                    Pengasuh: <strong className="text-text font-semibold">{anak.nama_pengasuh || '-'}</strong>
+                  </p>
+
+                  {/* Row 4: Two actions side by side ("Lihat kurva" and "Ukur") */}
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+                    <button
+                      type="button"
+                      id={`btn-lihat-kurva-${anak.id}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/kader/anak/${anak.id}`);
+                      }}
+                      className="w-full min-h-[48px] py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-text text-[14px] font-bold border border-border flex items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
+                      title="Lihat kurva"
+                    >
+                      <TrendingUp size={16} strokeWidth={2} className="text-teal flex-shrink-0" />
+                      <span className="whitespace-nowrap">Lihat kurva</span>
+                    </button>
+                    <button
+                      type="button"
+                      id={`btn-ukur-${anak.id}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/kader/ukur/${anak.id}`);
+                      }}
+                      className="w-full min-h-[48px] py-2 px-3 rounded-xl bg-primary hover:bg-primary-hover text-white text-[14px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-sm whitespace-nowrap"
+                      title="Ukur"
+                    >
+                      <Ruler size={16} strokeWidth={2} className="flex-shrink-0" />
+                      <span className="whitespace-nowrap">Ukur</span>
+                    </button>
                   </div>
                 </Card>
               );

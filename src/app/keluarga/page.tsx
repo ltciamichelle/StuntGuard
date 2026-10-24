@@ -12,6 +12,13 @@ import { calculateAgeInMonths, formatIndonesianDate } from '@/lib/utils';
 import { OnboardingCaregiver } from '@/components/keluarga/OnboardingCaregiver';
 import { CaregiverAvatar } from '@/components/keluarga/CaregiverAvatar';
 import { KeluargaTabBar } from '@/components/keluarga/KeluargaTabBar';
+import { LogoutConfirmModal } from '@/components/LogoutConfirmModal';
+import { 
+  verifyAndEnforceCacheSafety, 
+  getUnsentOutboxCount, 
+  clearAllLocalUserData, 
+  CACHED_USER_ID_KEY 
+} from '@/lib/cacheSafety';
 import {
   User,
   Calendar,
@@ -41,6 +48,8 @@ export default function KeluargaDashboardPage() {
   const [linkedList, setLinkedList] = useState<Array<{ child: Anak; hubungan: HubunganPengasuh }>>([]);
   const [activeChildId, setActiveChildId] = useState<string | null>(null);
   const [ringkasan, setRingkasan] = useState<RingkasanPengasuh | null>(null);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [pendingOutboxCount, setPendingOutboxCount] = useState(0);
 
   useEffect(() => {
     async function initUser() {
@@ -97,6 +106,9 @@ export default function KeluargaDashboardPage() {
         }
 
         setCurrentUser(userPayload);
+
+        // Enforce cache safety before displaying any child data
+        await verifyAndEnforceCacheSafety(userPayload.id);
 
         // 3. Check Onboarding completion
         if (typeof window !== 'undefined') {
@@ -164,12 +176,26 @@ export default function KeluargaDashboardPage() {
   };
 
   const handleLogout = async () => {
+    const unsent = await getUnsentOutboxCount();
+    if (unsent > 0) {
+      setPendingOutboxCount(unsent);
+      setShowLogoutModal(true);
+      return;
+    }
+    await executeLogout();
+  };
+
+  const executeLogout = async () => {
     try {
       await supabase.auth.signOut();
     } catch {
       // ignore
     }
+    await clearAllLocalUserData();
+    localStorage.removeItem(CACHED_USER_ID_KEY);
     document.cookie = 'sg_dev_session=; path=/; max-age=0';
+    document.cookie = 'sg_user_role=; path=/; max-age=0';
+    setShowLogoutModal(false);
     router.push('/login');
     router.refresh();
   };
@@ -601,6 +627,14 @@ export default function KeluargaDashboardPage() {
 
       {/* 4-Tab Bottom Navigation Bar */}
       <KeluargaTabBar />
+
+      {/* Logout Warning Modal for Pending Items */}
+      <LogoutConfirmModal
+        isOpen={showLogoutModal}
+        pendingCount={pendingOutboxCount}
+        onConfirm={executeLogout}
+        onCancel={() => setShowLogoutModal(false)}
+      />
     </main>
   );
 }

@@ -8,6 +8,7 @@ import { Artikel, Anak, HubunganPengasuh } from '@/types/database';
 import { createClient } from '@/lib/supabase/client';
 import { getLinkedChildren } from '@/lib/tautanEngine';
 import { getArtikelDetail, bacaArtikel } from '@/lib/artikelEngine';
+import { verifyAndEnforceCacheSafety } from '@/lib/cacheSafety';
 import {
   ArrowLeft,
   BookOpen,
@@ -70,6 +71,7 @@ export default function DetailArtikelPage() {
         // 3. Load active child
         let chosenChild: Anak | null = null;
         if (userPayload?.id) {
+          await verifyAndEnforceCacheSafety(userPayload.id);
           const items = await getLinkedChildren(userPayload.id, supabase);
           if (items.length > 0) {
             let chId = items[0].child.id;

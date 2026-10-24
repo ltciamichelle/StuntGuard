@@ -13,6 +13,7 @@ import {
   Posyandu,
   StatusRujukan,
 } from '@/types/database';
+import { clearAllLocalUserData, CACHED_USER_ID_KEY } from '@/lib/cacheSafety';
 import {
   Building2,
   LogOut,
@@ -496,7 +497,10 @@ export default function DesaDashboardPage() {
     } catch {
       // Ignore
     }
+    await clearAllLocalUserData();
+    localStorage.removeItem(CACHED_USER_ID_KEY);
     document.cookie = 'sg_dev_session=; path=/; max-age=0';
+    document.cookie = 'sg_user_role=; path=/; max-age=0';
     router.push('/login');
     router.refresh();
   };

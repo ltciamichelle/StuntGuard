@@ -19,6 +19,13 @@ import {
 
 import { db, clearLocalData } from '@/lib/db';
 import { syncEngine } from '@/lib/syncEngine';
+import { 
+  verifyAndEnforceCacheSafety, 
+  getUnsentOutboxCount, 
+  clearAllLocalUserData, 
+  CACHED_USER_ID_KEY 
+} from '@/lib/cacheSafety';
+import { LogoutConfirmModal } from '@/components/LogoutConfirmModal';
 
 function KaderHomeContent() {
   const router = useRouter();
@@ -42,7 +49,35 @@ function KaderHomeContent() {
   useEffect(() => {
     async function loadKaderProfile() {
       try {
-        // 1. Immediately read from local Dexie profile_cache for instant offline load
+        // 0. Resolve current user ID and enforce cache safety: never show cached data before user id has been checked
+        let currentUserId = '';
+        const isRealSupabase =
+          process.env.NEXT_PUBLIC_SUPABASE_URL &&
+          !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project') &&
+          !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
+
+        if (isRealSupabase) {
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) currentUserId = user.id;
+          } catch {}
+        }
+
+        if (!currentUserId && typeof document !== 'undefined') {
+          const match = document.cookie.match(/sg_dev_session=([^;]+)/);
+          if (match) {
+            try {
+              const parsed = JSON.parse(decodeURIComponent(match[1]));
+              if (parsed?.id) currentUserId = parsed.id;
+            } catch {}
+          }
+        }
+
+        if (currentUserId) {
+          await verifyAndEnforceCacheSafety(currentUserId);
+        }
+
+        // 1. Read from local Dexie profile_cache only AFTER user verification
         const cachedProfile = await db.profile_cache.toCollection().first();
         if (cachedProfile) {
           if (cachedProfile.nama) setUserName(cachedProfile.nama);
@@ -63,11 +98,6 @@ function KaderHomeContent() {
         }
 
         // 3. If online, fetch fresh profile from Supabase and cache it
-        const isRealSupabase =
-          process.env.NEXT_PUBLIC_SUPABASE_URL &&
-          !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project') &&
-          !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
-
         if (isRealSupabase && navigator.onLine) {
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
@@ -157,7 +187,7 @@ function KaderHomeContent() {
 
   const handleLogoutClick = async () => {
     // Check if there are pending items in outbox
-    const count = await db.outbox.count();
+    const count = await getUnsentOutboxCount();
     if (count > 0) {
       setPendingOutboxCount(count);
       setShowLogoutModal(true);
@@ -174,9 +204,10 @@ function KaderHomeContent() {
     } catch {
       // Ignore if offline
     }
-    // Rule 7 & 8: Clear local Dexie data so the next kader won't see cached data
-    await clearLocalData();
+    await clearAllLocalUserData();
+    localStorage.removeItem(CACHED_USER_ID_KEY);
     document.cookie = 'sg_dev_session=; path=/; max-age=0';
+    document.cookie = 'sg_user_role=; path=/; max-age=0';
     setShowLogoutModal(false);
     router.push('/login');
     router.refresh();
@@ -427,50 +458,12 @@ function KaderHomeContent() {
       </footer>
 
       {/* Logout Warning Modal for Pending Items */}
-      {showLogoutModal && (
-        <div
-          id="modal-logout-warning"
-          className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 animate-in fade-in duration-200"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="bg-white rounded-[24px] p-6 max-w-sm w-full shadow-2xl border border-border text-center">
-            <div className="w-16 h-16 rounded-full bg-yellow-light text-yellow flex items-center justify-center mx-auto mb-4">
-              <TriangleAlert size={32} strokeWidth={2} />
-            </div>
-
-            <h3 className="text-[20px] font-bold text-text mb-2">
-              Peringatan Keluar Akun
-            </h3>
-
-            <p className="text-[16px] text-text-muted mb-2 leading-relaxed">
-              Masih ada data belum terkirim. Keluar akan menghapusnya.
-            </p>
-            <p className="text-[16px] text-[#9A6F00] bg-yellow-light/60 p-3 rounded-2xl mb-6 font-semibold">
-              {pendingOutboxCount} data antrean di HP ini akan terhapus demi keamanan.
-            </p>
-
-            <div className="flex flex-col gap-2.5">
-              <Button
-                id="btn-confirm-logout"
-                variant="danger"
-                size="kader"
-                onClick={executeLogout}
-              >
-                Tetap Keluar
-              </Button>
-              <Button
-                id="btn-cancel-logout"
-                variant="secondary"
-                size="kader"
-                onClick={() => setShowLogoutModal(false)}
-              >
-                Batal
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <LogoutConfirmModal
+        isOpen={showLogoutModal}
+        pendingCount={pendingOutboxCount}
+        onConfirm={executeLogout}
+        onCancel={() => setShowLogoutModal(false)}
+      />
     </div>
   );
 }

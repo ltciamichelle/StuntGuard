@@ -10,6 +10,7 @@ import { Anak, HubunganPengasuh, Pengukuran } from '@/types/database';
 import { createClient } from '@/lib/supabase/client';
 import { getLinkedChildren } from '@/lib/tautanEngine';
 import { db } from '@/lib/db';
+import { verifyAndEnforceCacheSafety } from '@/lib/cacheSafety';
 import {
   getCaregiverStatusDetail,
   getCaregiverStatusSentence,
@@ -81,6 +82,9 @@ export default function KeluargaTumbuhPage() {
         }
 
         setCurrentUser(userPayload);
+
+        // Enforce cache safety before displaying any child data
+        await verifyAndEnforceCacheSafety(userPayload.id);
 
         // 3. Load linked children
         const items = await getLinkedChildren(userPayload.id, supabase);

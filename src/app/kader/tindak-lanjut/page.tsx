@@ -24,6 +24,7 @@ import {
 
 import { db, CachedTindakLanjut } from '@/lib/db';
 import { syncEngine } from '@/lib/syncEngine';
+import { verifyAndEnforceCacheSafety } from '@/lib/cacheSafety';
 
 export interface TindakLanjutItem extends TindakLanjut {
   anak?: Anak;
@@ -58,7 +59,35 @@ export default function TindakLanjutPage() {
     setLoading(true);
     setLoadError(false);
     try {
-      // 1. Read from Dexie tindak_lanjut_cache first (offline support)
+      // 0. Resolve current user ID and enforce cache safety
+      let currentUserId = '';
+      const isRealSupabase =
+        process.env.NEXT_PUBLIC_SUPABASE_URL &&
+        !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project') &&
+        !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
+
+      if (isRealSupabase) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) currentUserId = user.id;
+        } catch {}
+      }
+
+      if (!currentUserId && typeof document !== 'undefined') {
+        const match = document.cookie.match(/sg_dev_session=([^;]+)/);
+        if (match) {
+          try {
+            const parsed = JSON.parse(decodeURIComponent(match[1]));
+            if (parsed?.id) currentUserId = parsed.id;
+          } catch {}
+        }
+      }
+
+      if (currentUserId) {
+        await verifyAndEnforceCacheSafety(currentUserId);
+      }
+
+      // 1. Read from Dexie tindak_lanjut_cache ONLY AFTER user check
       try {
         const cached = await db.tindak_lanjut_cache.toArray();
         if (cached.length > 0) {
@@ -68,11 +97,6 @@ export default function TindakLanjutPage() {
       } catch (dbErr) {
         console.warn('Error reading from tindak_lanjut_cache:', dbErr);
       }
-
-      const isRealSupabase =
-        process.env.NEXT_PUBLIC_SUPABASE_URL &&
-        !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project') &&
-        !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
 
       let loadedItems: TindakLanjutItem[] = [];
 

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Card, Button } from '@/components/ui';
 import { Info, LogOut } from 'lucide-react';
+import { clearAllLocalUserData, CACHED_USER_ID_KEY } from '@/lib/cacheSafety';
 
 export default function BelumTersediaPage() {
   const router = useRouter();
@@ -16,7 +17,10 @@ export default function BelumTersediaPage() {
     } catch {
       // Ignore
     }
+    await clearAllLocalUserData();
+    localStorage.removeItem(CACHED_USER_ID_KEY);
     document.cookie = 'sg_dev_session=; path=/; max-age=0';
+    document.cookie = 'sg_user_role=; path=/; max-age=0';
     router.push('/login');
     router.refresh();
   };

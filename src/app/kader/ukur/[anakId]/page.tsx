@@ -30,6 +30,7 @@ import {
 
 import { db, CachedPengukuran } from '@/lib/db';
 import { syncEngine } from '@/lib/syncEngine';
+import { verifyAndEnforceCacheSafety } from '@/lib/cacheSafety';
 
 export default function MeasurementPage() {
   const params = useParams();
@@ -60,9 +61,37 @@ export default function MeasurementPage() {
     setLoadingChild(true);
     setLoadError(false);
     try {
+      // 0. Resolve current user ID and enforce cache safety
+      let currentUserId = '';
+      const isRealSupabase =
+        process.env.NEXT_PUBLIC_SUPABASE_URL &&
+        !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project') &&
+        !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
+
+      if (isRealSupabase) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) currentUserId = user.id;
+        } catch {}
+      }
+
+      if (!currentUserId && typeof document !== 'undefined') {
+        const match = document.cookie.match(/sg_dev_session=([^;]+)/);
+        if (match) {
+          try {
+            const parsed = JSON.parse(decodeURIComponent(match[1]));
+            if (parsed?.id) currentUserId = parsed.id;
+          } catch {}
+        }
+      }
+
+      if (currentUserId) {
+        await verifyAndEnforceCacheSafety(currentUserId);
+      }
+
       let foundChild: Anak | null = null;
 
-      // 1. Check local Dexie anak_cache first (offline support)
+      // 1. Check local Dexie anak_cache ONLY AFTER user check
       try {
         const cached = await db.anak_cache.get(childId);
         if (cached) {
@@ -73,11 +102,6 @@ export default function MeasurementPage() {
       }
 
       // 2. If online and not found, check Supabase
-      const isRealSupabase =
-        process.env.NEXT_PUBLIC_SUPABASE_URL &&
-        !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project') &&
-        !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
-
       if (!foundChild && isRealSupabase && navigator.onLine) {
         const { data } = await supabase
           .from('anak')

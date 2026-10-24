@@ -10,6 +10,7 @@ import { createClient } from '@/lib/supabase/client';
 import { getLinkedChildren } from '@/lib/tautanEngine';
 import { getArtikelList } from '@/lib/artikelEngine';
 import { getRingkasanPengasuh } from '@/lib/mpasiEngine';
+import { verifyAndEnforceCacheSafety } from '@/lib/cacheSafety';
 import {
   BookOpen,
   Utensils,
@@ -78,6 +79,9 @@ export default function KeluargaBelajarPage() {
         }
 
         setCurrentUser(userPayload);
+
+        // Enforce cache safety before displaying any child data
+        await verifyAndEnforceCacheSafety(userPayload.id);
 
         // 3. Load linked children
         const items = await getLinkedChildren(userPayload.id, supabase);

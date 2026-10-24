@@ -28,9 +28,24 @@ export async function middleware(request: NextRequest) {
     !supabaseUrl.includes('your-project') &&
     !supabaseUrl.includes('placeholder');
 
-  let user = null;
+  let user: any = null;
+  let role: string | null = null;
 
-  if (isRealSupabase) {
+  // 1. Check dev session cookie first (for fast dev / offline testing)
+  const devSession = request.cookies.get('sg_dev_session')?.value;
+  if (devSession) {
+    try {
+      user = JSON.parse(decodeURIComponent(devSession));
+      if (user?.role) {
+        role = user.role;
+      }
+    } catch {
+      user = null;
+    }
+  }
+
+  // 2. Check real Supabase authentication if not already authenticated via dev session
+  if (!user && isRealSupabase) {
     try {
       const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
         cookies: {
@@ -51,88 +66,110 @@ export async function middleware(request: NextRequest) {
         },
       });
 
-      const { data, error } = await supabase.auth.getUser();
-      user = data.user;
+      const { data } = await supabase.auth.getUser();
+      user = data?.user || null;
 
-      // Rule: Do not log the user out when a token refresh fails while offline.
+      if (user) {
+        role = user.user_metadata?.role || null;
+        if (!role) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .maybeSingle();
+          role = profile?.role || null;
+        }
+      }
+
+      // Offline fallback: if auth token exists but network/server check failed
       if (!user) {
         const hasSessionCookie = request.cookies
           .getAll()
           .some(
             (c) =>
               c.name.includes('-auth-token') ||
-              c.name.includes('supabase-auth') ||
-              c.name === 'sg_dev_session'
+              c.name.includes('supabase-auth')
           );
         if (hasSessionCookie) {
-          // Allow the offline PWA shell and cached pages to load without kicking to login
-          user = { id: 'offline-cached-user', role: 'kader' };
+          const savedRole = request.cookies.get('sg_user_role')?.value || 'kader';
+          user = { id: 'offline-cached-user', role: savedRole };
+          role = savedRole;
         }
       }
     } catch {
-      // In case of network error, check if auth cookies exist to preserve offline session
+      // Network error offline fallback
       const hasSessionCookie = request.cookies
         .getAll()
         .some(
           (c) =>
             c.name.includes('-auth-token') ||
-            c.name.includes('supabase-auth') ||
-            c.name === 'sg_dev_session'
+            c.name.includes('supabase-auth')
         );
       if (hasSessionCookie) {
-        user = { id: 'offline-cached-user', role: 'kader' };
+        const savedRole = request.cookies.get('sg_user_role')?.value || 'kader';
+        user = { id: 'offline-cached-user', role: savedRole };
+        role = savedRole;
       } else {
-        user = null;
-      }
-    }
-  } else {
-    // Development fallback check when using mock/test session cookie
-    const devSession = request.cookies.get('sg_dev_session')?.value;
-    if (devSession) {
-      try {
-        user = JSON.parse(devSession);
-      } catch {
         user = null;
       }
     }
   }
 
-  // Route protection
+  // Fallback to role cookie if user is set but role is still undetermined
+  if (user && !role) {
+    role = request.cookies.get('sg_user_role')?.value || user.role || 'kader';
+  }
+
   const isLoginPage = pathname === '/login';
 
+  // If unauthenticated: redirect to /login
   if (!user && !isLoginPage) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = '/login';
     return NextResponse.redirect(loginUrl);
   }
 
-  if (user) {
+  if (user && role) {
     const destination = request.nextUrl.clone();
-    const role = (user as any)?.user_metadata?.role || (user as any)?.role || 'kader';
 
+    // If at /login while already authenticated, redirect to role's home
     if (isLoginPage) {
-      if (role === 'kader') {
+      if (role === 'pengasuh') {
+        destination.pathname = '/keluarga';
+      } else if (role === 'kader') {
         destination.pathname = '/kader';
       } else if (['bidan', 'kpm', 'kepala_desa'].includes(role)) {
         destination.pathname = '/desa';
-      } else if (role === 'pengasuh') {
-        destination.pathname = '/keluarga';
       } else {
         destination.pathname = '/belum-tersedia';
       }
       return NextResponse.redirect(destination);
     }
 
-    // Role-based route isolation:
-    // 1. role 'pengasuh' can only access /keluarga/* (and api routes)
+    // Root path '/' routing
+    if (pathname === '/') {
+      if (role === 'pengasuh') {
+        destination.pathname = '/keluarga';
+      } else if (role === 'kader') {
+        destination.pathname = '/kader';
+      } else if (['bidan', 'kpm', 'kepala_desa'].includes(role)) {
+        destination.pathname = '/desa';
+      } else {
+        destination.pathname = '/belum-tersedia';
+      }
+      return NextResponse.redirect(destination);
+    }
+
+    // RULE 1: Role 'pengasuh' can ONLY open /keluarga/* and login pages
+    // Pengasuh must never open /kader/* or /desa/*, even by typing the URL
     if (role === 'pengasuh') {
-      if (!pathname.startsWith('/keluarga') && !pathname.startsWith('/api')) {
+      if (!pathname.startsWith('/keluarga') && pathname !== '/login' && pathname !== '/belum-tersedia') {
         destination.pathname = '/keluarga';
         return NextResponse.redirect(destination);
       }
     }
 
-    // 2. /keluarga/* is for role 'pengasuh' only
+    // RULE 2: Roles kader, bidan, kpm, kepala_desa must NOT open /keluarga/*
     if (pathname.startsWith('/keluarga') && role !== 'pengasuh') {
       if (role === 'kader') {
         destination.pathname = '/kader';
@@ -144,13 +181,15 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(destination);
     }
 
-    if (pathname.startsWith('/kader') && role !== 'kader') {
-      destination.pathname = ['bidan', 'kpm', 'kepala_desa'].includes(role) ? '/desa' : '/keluarga';
+    // RULE 3: Kader cannot open /desa/*
+    if (pathname.startsWith('/desa') && role === 'kader') {
+      destination.pathname = '/kader';
       return NextResponse.redirect(destination);
     }
 
-    if (pathname.startsWith('/desa') && !['bidan', 'kpm', 'kepala_desa'].includes(role)) {
-      destination.pathname = role === 'kader' ? '/kader' : '/keluarga';
+    // RULE 4: Bidan, KPM, Kepala Desa cannot open /kader/*
+    if (pathname.startsWith('/kader') && ['bidan', 'kpm', 'kepala_desa'].includes(role)) {
+      destination.pathname = '/desa';
       return NextResponse.redirect(destination);
     }
   }

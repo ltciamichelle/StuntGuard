@@ -2,6 +2,13 @@ import { createClient } from '@/lib/supabase/client';
 import { db, OutboxItem, OutboxTable, CachedPengukuran, CachedTindakLanjut } from './db';
 import { Anak } from '@/types/database';
 
+export interface FetchErrorDetail {
+  query: string;
+  status: number | string;
+  message: string;
+  time: string;
+}
+
 export interface SyncEngineState {
   state: 'tersinkron' | 'menunggu' | 'mengirim' | 'gagal';
   pendingCount: number;
@@ -9,6 +16,7 @@ export interface SyncEngineState {
   lastSyncTime: string | null;
   failedItems: OutboxItem[];
   totalLocalCount: number;
+  lastFetchError?: FetchErrorDetail | null;
 }
 
 type SyncListener = (state: SyncEngineState) => void;
@@ -17,12 +25,16 @@ class SyncEngine {
   private isSyncing = false;
   private listeners: Set<SyncListener> = new Set();
   private intervalTimer: NodeJS.Timeout | null = null;
+  private lastFetchError: FetchErrorDetail | null = null;
 
   constructor() {
     if (typeof window !== 'undefined') {
       // Listen for browser coming back online
-      window.addEventListener('online', () => {
-        this.triggerSync();
+      window.addEventListener('online', async () => {
+        const role = await this.getCurrentUserRole();
+        if (role !== 'pengasuh') {
+          this.triggerSync();
+        }
       });
 
       window.addEventListener('offline', () => {
@@ -30,9 +42,12 @@ class SyncEngine {
       });
 
       // Periodic check every 30 seconds while online
-      this.intervalTimer = setInterval(() => {
+      this.intervalTimer = setInterval(async () => {
         if (navigator.onLine) {
-          this.triggerSync();
+          const role = await this.getCurrentUserRole();
+          if (role !== 'pengasuh') {
+            this.triggerSync();
+          }
         }
       }, 30000);
     }
@@ -96,7 +111,41 @@ class SyncEngine {
       lastSyncTime,
       failedItems,
       totalLocalCount,
+      lastFetchError: this.lastFetchError,
     };
+  }
+
+  public setLastFetchError(err: FetchErrorDetail | null): void {
+    this.lastFetchError = err;
+    this.notifyState();
+  }
+
+  public getLastFetchError(): FetchErrorDetail | null {
+    return this.lastFetchError;
+  }
+
+  public async getCurrentUserRole(): Promise<string | null> {
+    if (typeof document !== 'undefined') {
+      const matchRole = document.cookie.match(/sg_user_role=([^;]+)/);
+      if (matchRole) return decodeURIComponent(matchRole[1]);
+
+      const matchDev = document.cookie.match(/sg_dev_session=([^;]+)/);
+      if (matchDev) {
+        try {
+          const parsed = JSON.parse(decodeURIComponent(matchDev[1]));
+          if (parsed?.role) return parsed.role;
+        } catch {}
+      }
+    }
+
+    try {
+      const profiles = await db.profile_cache.toArray();
+      if (profiles.length > 0 && profiles[0].role) {
+        return profiles[0].role;
+      }
+    } catch {}
+
+    return null;
   }
 
   /**
@@ -175,6 +224,14 @@ class SyncEngine {
         .where('status')
         .anyOf('menunggu', 'mengirim')
         .toArray();
+
+      // Check role: offline sync engine for the kader side must not run for pengasuh
+      const currentRole = await this.getCurrentUserRole();
+      if (currentRole === 'pengasuh') {
+        this.isSyncing = false;
+        this.notifyState();
+        return;
+      }
 
       // Sort by dependency:
       // 1. anak
@@ -401,8 +458,8 @@ class SyncEngine {
         }
       }
 
-      // Refresh server caches when online
-      if (isRealSupabase && navigator.onLine) {
+      // Refresh server caches when online (kader only)
+      if (isRealSupabase && navigator.onLine && currentRole !== 'pengasuh') {
         await this.refreshServerCaches();
       }
     } finally {
@@ -416,6 +473,11 @@ class SyncEngine {
    */
   public async refreshServerCaches(): Promise<void> {
     try {
+      const currentRole = await this.getCurrentUserRole();
+      if (currentRole === 'pengasuh') {
+        // The offline sync engine for the kader side must not run for pengasuh
+        return;
+      }
       const isRealSupabase =
         process.env.NEXT_PUBLIC_SUPABASE_URL &&
         !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project') &&

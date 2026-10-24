@@ -9,6 +9,7 @@ import { KeluargaTabBar } from '@/components/keluarga/KeluargaTabBar';
 import { Anak, MpasiMenu } from '@/types/database';
 import { getLinkedChildren } from '@/lib/tautanEngine';
 import { calculateAgeInMonths } from '@/lib/utils';
+import { verifyAndEnforceCacheSafety } from '@/lib/cacheSafety';
 import {
   getMpasiMenu,
   getTodayMpasiLog,
@@ -93,6 +94,9 @@ export default function CatatMpasiPage() {
         }
 
         setCurrentUser(userPayload);
+
+        // Enforce cache safety before displaying any child data
+        await verifyAndEnforceCacheSafety(userPayload.id);
 
         // 3. Load linked children
         const linked = await getLinkedChildren(userPayload.id, supabase);
