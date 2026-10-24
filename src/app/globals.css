@@ -95,49 +95,19 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
-/* Splash Screen Animations */
-@keyframes splash-shimmer {
+/* Minimalist Splash Screen Animation */
+@keyframes splash-logo-in {
   0% {
-    transform: translateX(-100%);
+    opacity: 0;
+    transform: scale(0.92);
   }
   100% {
-    transform: translateX(250%);
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
-@keyframes splash-float {
-  0%, 100% {
-    transform: translateY(0px) scale(1);
-  }
-  50% {
-    transform: translateY(-8px) scale(1.02);
-  }
-}
-
-@keyframes splash-pulse-ring {
-  0% {
-    transform: scale(0.95);
-    opacity: 0.6;
-  }
-  50% {
-    transform: scale(1.15);
-    opacity: 0.15;
-  }
-  100% {
-    transform: scale(0.95);
-    opacity: 0.6;
-  }
-}
-
-.animate-splash-shimmer {
-  animation: splash-shimmer 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
-
-.animate-splash-float {
-  animation: splash-float 3.2s ease-in-out infinite;
-}
-
-.animate-splash-pulse-ring {
-  animation: splash-pulse-ring 2.4s ease-in-out infinite;
+.animate-splash-logo {
+  animation: splash-logo-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
