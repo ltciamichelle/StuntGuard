@@ -8,8 +8,11 @@ import { Lock, Mail, TriangleAlert } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
+  const [authMode, setAuthMode] = useState<'masuk' | 'daftar'>('masuk');
+  const [namaLengkap, setNamaLengkap] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -21,6 +24,9 @@ export default function LoginPage() {
     'kader2@test.com': { nama: 'Siti Aminah', role: 'kader', posyandu: 'Posyandu Mawar 01' },
     'bidan@test.com': { nama: 'Bdn. Endang Rahayu, S.Tr.Keb', role: 'bidan', posyandu: 'Puskesmas Pembantu Desa' },
     'pengasuh@test.com': { nama: 'Fatimah Zahra (Pengasuh)', role: 'pengasuh', posyandu: 'Posyandu Melati 01' },
+    'ayah@test.com': { nama: 'Budi Santoso (Ayah)', role: 'pengasuh', posyandu: 'Posyandu Melati 01' },
+    'nenek@test.com': { nama: 'Nenek Aminah', role: 'pengasuh', posyandu: 'Posyandu Melati 01' },
+    'pengasuh_baru@test.com': { nama: 'Pengasuh Baru', role: 'pengasuh', posyandu: '' },
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -36,83 +42,151 @@ export default function LoginPage() {
         !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project') &&
         !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
 
-      if (isRealSupabase) {
-        // Real Supabase Auth
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: cleanEmail,
-          password,
-        });
-
-        if (error) {
-          // Rule 1: Show clear Indonesian errors for wrong password
-          if (error.message.toLowerCase().includes('invalid') || error.message.toLowerCase().includes('credentials')) {
-            setErrorMessage('Email atau kata sandi salah. Silakan periksa kembali.');
-          } else {
-            setErrorMessage(`Gagal masuk: ${error.message}`);
-          }
+      if (authMode === 'daftar') {
+        // Validation for registration
+        if (!namaLengkap.trim()) {
+          setErrorMessage('Nama lengkap wajib diisi.');
+          setLoading(false);
+          return;
+        }
+        if (password.length < 6) {
+          setErrorMessage('Kata sandi minimal 6 karakter.');
+          setLoading(false);
+          return;
+        }
+        if (password !== confirmPassword) {
+          setErrorMessage('Ulangi kata sandi tidak cocok.');
           setLoading(false);
           return;
         }
 
-        if (data.user) {
-          // Rule 2: After login, read the user's row from profiles and redirect by role
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', data.user.id)
-            .single();
+        if (isRealSupabase) {
+          const { data, error } = await supabase.auth.signUp({
+            email: cleanEmail,
+            password,
+            options: {
+              data: {
+                nama: namaLengkap.trim(),
+                role: 'pengasuh',
+              },
+            },
+          });
 
-          const role = profile?.role || data.user.user_metadata?.role;
-
-          if (role === 'kader') {
-            router.push('/kader');
-          } else if (role === 'bidan' || role === 'kpm' || role === 'kepala_desa') {
-            router.push('/desa');
-          } else {
-            router.push('/belum-tersedia');
+          if (error) {
+            if (error.message.toLowerCase().includes('already') || error.message.toLowerCase().includes('registered')) {
+              setErrorMessage('Email sudah terdaftar. Silakan masuk atau gunakan email lain.');
+            } else {
+              setErrorMessage(`Gagal mendaftar: ${error.message}`);
+            }
+            setLoading(false);
+            return;
           }
+
+          if (data.user) {
+            await supabase.from('profiles').upsert({
+              id: data.user.id,
+              nama: namaLengkap.trim(),
+              role: 'pengasuh',
+              desa_id: 1,
+              posyandu_id: null,
+            });
+            router.push('/keluarga');
+            router.refresh();
+            return;
+          }
+        } else {
+          // Dev fallback registration
+          const sessionPayload = {
+            id: `dev-${cleanEmail}`,
+            email: cleanEmail,
+            role: 'pengasuh',
+            nama: namaLengkap.trim(),
+            posyandu_nama: '',
+            posyandu_id: null,
+            desa_id: 1,
+          };
+          document.cookie = `sg_dev_session=${encodeURIComponent(JSON.stringify(sessionPayload))}; path=/; max-age=86400; SameSite=Lax`;
+          router.push('/keluarga');
           router.refresh();
           return;
         }
       } else {
-        // Fallback test mode for predefined accounts when Supabase keys are pending
-        if (password.length < 4) {
-          setErrorMessage('Kata sandi salah. Minimal 4 karakter.');
-          setLoading(false);
-          return;
-        }
-
-        const testAccount = TEST_PROFILES[cleanEmail];
-        if (testAccount) {
-          const posyanduId = cleanEmail === 'kader2@test.com' ? 2 : 1;
-          // Set dev session cookie
-          const sessionPayload = {
-            id: `dev-${cleanEmail}`,
+        // Mode Masuk (Login)
+        if (isRealSupabase) {
+          const { data, error } = await supabase.auth.signInWithPassword({
             email: cleanEmail,
-            role: testAccount.role,
-            nama: testAccount.nama,
-            posyandu_nama: testAccount.posyandu,
-            posyandu_id: posyanduId,
-            desa_id: 1,
-          };
-          document.cookie = `sg_dev_session=${encodeURIComponent(JSON.stringify(sessionPayload))}; path=/; max-age=86400; SameSite=Lax`;
+            password,
+          });
 
-          if (testAccount.role === 'kader') {
-            router.push('/kader');
-          } else if (testAccount.role === 'pengasuh') {
-            router.push('/belum-tersedia');
-          } else {
-            router.push('/desa');
+          if (error) {
+            if (error.message.toLowerCase().includes('invalid') || error.message.toLowerCase().includes('credentials')) {
+              setErrorMessage('Email atau kata sandi salah. Silakan periksa kembali.');
+            } else {
+              setErrorMessage(`Gagal masuk: ${error.message}`);
+            }
+            setLoading(false);
+            return;
           }
-          router.refresh();
-          return;
+
+          if (data.user) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', data.user.id)
+              .single();
+
+            const role = profile?.role || data.user.user_metadata?.role;
+
+            if (role === 'kader') {
+              router.push('/kader');
+            } else if (role === 'bidan' || role === 'kpm' || role === 'kepala_desa') {
+              router.push('/desa');
+            } else if (role === 'pengasuh') {
+              router.push('/keluarga');
+            } else {
+              router.push('/belum-tersedia');
+            }
+            router.refresh();
+            return;
+          }
         } else {
-          setErrorMessage('Email atau kata sandi salah. Gunakan akun uji coba terdaftar.');
-          setLoading(false);
-          return;
+          if (password.length < 4) {
+            setErrorMessage('Kata sandi salah. Minimal 4 karakter.');
+            setLoading(false);
+            return;
+          }
+
+          const testAccount = TEST_PROFILES[cleanEmail];
+          if (testAccount) {
+            const posyanduId = cleanEmail === 'kader2@test.com' ? 2 : 1;
+            const sessionPayload = {
+              id: `dev-${cleanEmail}`,
+              email: cleanEmail,
+              role: testAccount.role,
+              nama: testAccount.nama,
+              posyandu_nama: testAccount.posyandu,
+              posyandu_id: posyanduId,
+              desa_id: 1,
+            };
+            document.cookie = `sg_dev_session=${encodeURIComponent(JSON.stringify(sessionPayload))}; path=/; max-age=86400; SameSite=Lax`;
+
+            if (testAccount.role === 'kader') {
+              router.push('/kader');
+            } else if (testAccount.role === 'pengasuh') {
+              router.push('/keluarga');
+            } else {
+              router.push('/desa');
+            }
+            router.refresh();
+            return;
+          } else {
+            setErrorMessage('Email atau kata sandi salah. Gunakan akun uji coba terdaftar atau daftar sebagai pengasuh.');
+            setLoading(false);
+            return;
+          }
         }
       }
-    } catch (err: any) {
+    } catch {
       setErrorMessage('Terjadi kendala jaringan saat menghubungi server. Silakan coba lagi.');
     } finally {
       setLoading(false);
@@ -120,6 +194,7 @@ export default function LoginPage() {
   };
 
   const handleSelectQuickAccount = (accEmail: string) => {
+    setAuthMode('masuk');
     setEmail(accEmail);
     setPassword('password123');
     setErrorMessage('');
@@ -133,18 +208,69 @@ export default function LoginPage() {
           <img
             src="/logo.png"
             alt="StuntGuard Logo"
-            className="w-32 h-32 object-contain drop-shadow-sm mb-1"
+            className="w-28 h-28 object-contain drop-shadow-sm mb-1"
           />
           <h1 className="text-[24px] font-bold text-text leading-tight">
-            Masuk ke StuntGuard
+            {authMode === 'masuk' ? 'Masuk ke StuntGuard' : 'Daftar Akun Pengasuh'}
           </h1>
           <p className="text-[16px] text-teal font-bold tracking-tight mt-1">
             Posyandu Integrasi Layanan Primer (ILP)
           </p>
         </div>
 
-        {/* Login Form */}
+        {/* Tab Switcher: Masuk vs Daftar */}
+        <div className="flex p-1 bg-slate-100 rounded-2xl border border-border">
+          <button
+            type="button"
+            onClick={() => {
+              setAuthMode('masuk');
+              setErrorMessage('');
+            }}
+            className={`flex-1 min-h-[48px] rounded-xl font-bold text-[16px] transition-all cursor-pointer ${
+              authMode === 'masuk'
+                ? 'bg-white text-primary shadow-soft'
+                : 'text-text-muted hover:text-text'
+            }`}
+          >
+            Masuk
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setAuthMode('daftar');
+              setErrorMessage('');
+            }}
+            className={`flex-1 min-h-[48px] rounded-xl font-bold text-[16px] transition-all cursor-pointer ${
+              authMode === 'daftar'
+                ? 'bg-white text-primary shadow-soft'
+                : 'text-text-muted hover:text-text'
+            }`}
+          >
+            Daftar Pengasuh
+          </button>
+        </div>
+
+        {/* Login / Register Form */}
         <form onSubmit={handleLogin} className="flex flex-col gap-5">
+          {authMode === 'daftar' && (
+            <div>
+              <label htmlFor="register-nama" className="block text-[16px] font-bold text-text mb-2">
+                Nama Lengkap Anda
+              </label>
+              <div className="relative">
+                <input
+                  id="register-nama"
+                  type="text"
+                  required
+                  value={namaLengkap}
+                  onChange={(e) => setNamaLengkap(e.target.value)}
+                  placeholder="Contoh: Budi Santoso"
+                  className="w-full min-h-[56px] px-4 text-[16px] font-medium text-text bg-white border-2 border-border rounded-2xl focus:border-primary focus:outline-none transition-colors"
+                />
+              </div>
+            </div>
+          )}
+
           <div>
             <label htmlFor="login-email" className="block text-[16px] font-bold text-text mb-2">
               Alamat Email
@@ -157,7 +283,7 @@ export default function LoginPage() {
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="nama@posyandu.desa.id"
+                placeholder="nama@email.com"
                 className="w-full min-h-[56px] px-4 pl-12 text-[16px] font-medium text-text bg-white border-2 border-border rounded-2xl focus:border-primary focus:outline-none transition-colors"
               />
               <Mail
@@ -176,7 +302,7 @@ export default function LoginPage() {
                 id="login-password"
                 type="password"
                 required
-                autoComplete="current-password"
+                autoComplete={authMode === 'masuk' ? 'current-password' : 'new-password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
@@ -187,7 +313,34 @@ export default function LoginPage() {
                 className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none"
               />
             </div>
+            {authMode === 'daftar' && (
+              <p className="text-[14px] text-text-muted mt-1">Minimal 6 karakter.</p>
+            )}
           </div>
+
+          {authMode === 'daftar' && (
+            <div>
+              <label htmlFor="register-confirm-password" className="block text-[16px] font-bold text-text mb-2">
+                Ulangi Kata Sandi
+              </label>
+              <div className="relative">
+                <input
+                  id="register-confirm-password"
+                  type="password"
+                  required
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full min-h-[56px] px-4 pl-12 text-[16px] font-medium text-text bg-white border-2 border-border rounded-2xl focus:border-primary focus:outline-none transition-colors"
+                />
+                <Lock
+                  size={22}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Error Banner in Simple Indonesian */}
           {errorMessage && (
@@ -199,7 +352,7 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Large Action Button: Masuk */}
+          {/* Action Button: 56px */}
           <div className="pt-2">
             <Button
               id="btn-login-submit"
@@ -208,7 +361,7 @@ export default function LoginPage() {
               size="kader"
               loading={loading}
             >
-              Masuk
+              {authMode === 'masuk' ? 'Masuk' : 'Daftar Sekarang'}
             </Button>
           </div>
         </form>
@@ -233,18 +386,6 @@ export default function LoginPage() {
 
             <button
               type="button"
-              onClick={() => handleSelectQuickAccount('kader2@test.com')}
-              className="text-left p-3.5 rounded-2xl bg-white border border-border hover:border-primary text-[16px] flex items-center justify-between transition-colors cursor-pointer min-h-[56px]"
-            >
-              <div>
-                <span className="font-bold text-text block text-[16px]">kader2@test.com</span>
-                <span className="text-text-muted text-[16px]">Kader Siti Aminah • Posyandu Mawar 01</span>
-              </div>
-              <span className="text-primary font-bold text-[16px] ml-2 flex-shrink-0">Gunakan</span>
-            </button>
-
-            <button
-              type="button"
               onClick={() => handleSelectQuickAccount('bidan@test.com')}
               className="text-left p-3.5 rounded-2xl bg-white border border-border hover:border-teal text-[16px] flex items-center justify-between transition-colors cursor-pointer min-h-[56px]"
             >
@@ -263,6 +404,42 @@ export default function LoginPage() {
               <div>
                 <span className="font-bold text-text block text-[16px]">pengasuh@test.com</span>
                 <span className="text-text-muted text-[16px]">Pengasuh • Fatimah Zahra</span>
+              </div>
+              <span className="text-primary font-bold text-[16px] ml-2 flex-shrink-0">Gunakan</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSelectQuickAccount('ayah@test.com')}
+              className="text-left p-3.5 rounded-2xl bg-white border border-border hover:border-primary text-[16px] flex items-center justify-between transition-colors cursor-pointer min-h-[56px]"
+            >
+              <div>
+                <span className="font-bold text-text block text-[16px]">ayah@test.com</span>
+                <span className="text-text-muted text-[16px]">Pengasuh (Ayah) • Budi Santoso</span>
+              </div>
+              <span className="text-primary font-bold text-[16px] ml-2 flex-shrink-0">Gunakan</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSelectQuickAccount('nenek@test.com')}
+              className="text-left p-3.5 rounded-2xl bg-white border border-border hover:border-primary text-[16px] flex items-center justify-between transition-colors cursor-pointer min-h-[56px]"
+            >
+              <div>
+                <span className="font-bold text-text block text-[16px]">nenek@test.com</span>
+                <span className="text-text-muted text-[16px]">Pengasuh (Nenek) • Nenek Aminah</span>
+              </div>
+              <span className="text-primary font-bold text-[16px] ml-2 flex-shrink-0">Gunakan</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSelectQuickAccount('pengasuh_baru@test.com')}
+              className="text-left p-3.5 rounded-2xl bg-white border border-dashed border-border hover:border-primary text-[16px] flex items-center justify-between transition-colors cursor-pointer min-h-[56px]"
+            >
+              <div>
+                <span className="font-bold text-text block text-[16px]">pengasuh_baru@test.com</span>
+                <span className="text-text-muted text-[16px]">Pengasuh Baru (Belum Tautkan Anak)</span>
               </div>
               <span className="text-primary font-bold text-[16px] ml-2 flex-shrink-0">Gunakan</span>
             </button>

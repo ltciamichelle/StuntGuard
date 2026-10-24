@@ -45,6 +45,12 @@ export interface CachedWhoReference {
   s: number;
 }
 
+export interface CachedPengasuhAnak {
+  anak_id: string;
+  user_id: string;
+  hubungan: import('@/types/database').HubunganPengasuh;
+}
+
 export class StuntGuardDexieDB extends Dexie {
   anak_cache!: Table<Anak, string>;
   profile_cache!: Table<CachedProfile, string>;
@@ -52,6 +58,7 @@ export class StuntGuardDexieDB extends Dexie {
   pengukuran_cache!: Table<CachedPengukuran, string>;
   outbox!: Table<OutboxItem, string>;
   who_reference_cache!: Table<CachedWhoReference, string>;
+  pengasuh_anak_cache!: Table<CachedPengasuhAnak, [string, string]>;
 
   constructor() {
     super('StuntGuardDB');
@@ -62,6 +69,9 @@ export class StuntGuardDexieDB extends Dexie {
       pengukuran_cache: 'id, anak_id, posyandu_id, tgl_ukur',
       outbox: 'id, table, status, created_at',
       who_reference_cache: 'id, indikator, jenis_kelamin, umur_bulan',
+    });
+    this.version(3).stores({
+      pengasuh_anak_cache: '[anak_id+user_id], anak_id, user_id, hubungan',
     });
   }
 }

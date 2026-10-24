@@ -9,6 +9,7 @@ import { GrowthCharts } from '@/components/GrowthCharts';
 import { calculateAgeInMonths, formatIndonesianDate } from '@/lib/utils';
 import { Anak, Pengukuran } from '@/types/database';
 import { db, CachedPengukuran } from '@/lib/db';
+import { buatKodeTautan } from '@/lib/tautanEngine';
 import {
   ChevronLeft,
   Scale,
@@ -161,17 +162,8 @@ export default function ChildDetailPage() {
 
     setLoadingCode(true);
     try {
-      const { data, error } = await supabase.rpc('buat_kode_tautan', {
-        p_anak: anakId,
-      });
-
-      if (error) {
-        // Fallback for local testing or RPC pending
-        const randomCode = `SG-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-        setTautanCode(randomCode);
-      } else if (data) {
-        setTautanCode(String(data));
-      }
+      const code = await buatKodeTautan(anakId, supabase);
+      setTautanCode(code);
     } catch {
       setTautanError('Butuh sinyal untuk membuat kode.');
     } finally {

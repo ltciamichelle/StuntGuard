@@ -115,25 +115,42 @@ export async function middleware(request: NextRequest) {
         destination.pathname = '/kader';
       } else if (['bidan', 'kpm', 'kepala_desa'].includes(role)) {
         destination.pathname = '/desa';
+      } else if (role === 'pengasuh') {
+        destination.pathname = '/keluarga';
       } else {
         destination.pathname = '/belum-tersedia';
       }
       return NextResponse.redirect(destination);
     }
 
-    // Role-based route isolation: role 'pengasuh' goes to /belum-tersedia for now
-    if (role === 'pengasuh' && pathname !== '/belum-tersedia' && !pathname.startsWith('/api')) {
-      destination.pathname = '/belum-tersedia';
+    // Role-based route isolation:
+    // 1. role 'pengasuh' can only access /keluarga/* (and api routes)
+    if (role === 'pengasuh') {
+      if (!pathname.startsWith('/keluarga') && !pathname.startsWith('/api')) {
+        destination.pathname = '/keluarga';
+        return NextResponse.redirect(destination);
+      }
+    }
+
+    // 2. /keluarga/* is for role 'pengasuh' only
+    if (pathname.startsWith('/keluarga') && role !== 'pengasuh') {
+      if (role === 'kader') {
+        destination.pathname = '/kader';
+      } else if (['bidan', 'kpm', 'kepala_desa'].includes(role)) {
+        destination.pathname = '/desa';
+      } else {
+        destination.pathname = '/belum-tersedia';
+      }
       return NextResponse.redirect(destination);
     }
 
     if (pathname.startsWith('/kader') && role !== 'kader') {
-      destination.pathname = ['bidan', 'kpm', 'kepala_desa'].includes(role) ? '/desa' : '/belum-tersedia';
+      destination.pathname = ['bidan', 'kpm', 'kepala_desa'].includes(role) ? '/desa' : '/keluarga';
       return NextResponse.redirect(destination);
     }
 
     if (pathname.startsWith('/desa') && !['bidan', 'kpm', 'kepala_desa'].includes(role)) {
-      destination.pathname = role === 'kader' ? '/kader' : '/belum-tersedia';
+      destination.pathname = role === 'kader' ? '/kader' : '/keluarga';
       return NextResponse.redirect(destination);
     }
   }
