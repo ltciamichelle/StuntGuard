@@ -12,7 +12,7 @@ export interface CachedProfile {
   updated_at: string;
 }
 
-export type OutboxTable = 'anak' | 'consent' | 'pengukuran' | 'tindak_lanjut';
+export type OutboxTable = 'anak' | 'consent' | 'pengukuran' | 'tindak_lanjut' | 'mpasi_log';
 export type OutboxStatus = 'menunggu' | 'mengirim' | 'gagal';
 
 export interface OutboxItem {
@@ -59,6 +59,8 @@ export class StuntGuardDexieDB extends Dexie {
   outbox!: Table<OutboxItem, string>;
   who_reference_cache!: Table<CachedWhoReference, string>;
   pengasuh_anak_cache!: Table<CachedPengasuhAnak, [string, string]>;
+  mpasi_log_cache!: Table<import('@/types/database').MpasiLog, string>;
+  mpasi_menu_cache!: Table<import('@/types/database').MpasiMenu, string | number>;
 
   constructor() {
     super('StuntGuardDB');
@@ -72,6 +74,10 @@ export class StuntGuardDexieDB extends Dexie {
     });
     this.version(3).stores({
       pengasuh_anak_cache: '[anak_id+user_id], anak_id, user_id, hubungan',
+    });
+    this.version(4).stores({
+      mpasi_log_cache: 'id, anak_id, user_id, menu_id, tgl',
+      mpasi_menu_cache: 'id, kelompok, usia_min_bulan',
     });
   }
 }
@@ -103,6 +109,7 @@ export async function clearLocalData(): Promise<void> {
     db.tindak_lanjut_cache.clear(),
     db.pengukuran_cache.clear(),
     db.outbox.clear(),
+    db.mpasi_log_cache.clear(),
   ]);
   // Also clear legacy localStorage keys to be 100% clean
   if (typeof window !== 'undefined') {

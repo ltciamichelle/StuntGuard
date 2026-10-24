@@ -79,3 +79,29 @@ export interface Consent {
   hubungan: HubunganPengasuh;
   versi_teks: string;
 }
+
+export interface MpasiMenu {
+  id: string | number;
+  nama: string;
+  kelompok: string;
+  ikon: string;
+  usia_min_bulan: number;
+}
+
+export interface MpasiLog {
+  id: string; // crypto.randomUUID()
+  anak_id: string;
+  user_id: string;
+  menu_id: string | number;
+  tgl: string; // YYYY-MM-DD
+  created_at?: string;
+}
+
+export interface RingkasanPengasuh {
+  total_poin: number;
+  streak_hari: number;
+  sudah_catat_hari_ini: boolean;
+  tgl_kunjungan_berikutnya: string | null;
+  status_terakhir: StatusGizi | string | null;
+  tgl_ukur_terakhir: string | null;
+}

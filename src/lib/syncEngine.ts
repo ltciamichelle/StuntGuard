@@ -187,6 +187,7 @@ class SyncEngine {
         consent: 2,
         pengukuran: 3,
         tindak_lanjut: 4,
+        mpasi_log: 5,
       };
 
       pendingItems.sort((a, b) => {
@@ -357,6 +358,19 @@ class SyncEngine {
                 .upsert(tlPayload, { onConflict: 'id', ignoreDuplicates: true });
 
               if (tlError) throw tlError;
+            }
+
+            await db.outbox.delete(item.id);
+          } else if (item.table === 'mpasi_log') {
+            const logRows = Array.isArray(item.payload) ? item.payload : [item.payload];
+            const { error: logError } = await supabase
+              .from('mpasi_log')
+              .upsert(logRows, { onConflict: 'id', ignoreDuplicates: true });
+
+            if (logError) throw logError;
+
+            for (const row of logRows) {
+              await db.mpasi_log_cache.put(row);
             }
 
             await db.outbox.delete(item.id);
