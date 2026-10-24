@@ -193,7 +193,7 @@ export function saveAllStoredLogs(logs: MpasiLog[]): void {
   }
 }
 
-function getStoredHabitStats(): Record<string, { total_poin: number; logged_dates: string[] }> {
+export function getStoredHabitStats(): Record<string, { total_poin: number; logged_dates: string[] }> {
   if (typeof window === 'undefined') return inMemoryHabitStats;
   try {
     const raw = localStorage.getItem(STORAGE_KEY_HABIT_STATS);
@@ -203,7 +203,7 @@ function getStoredHabitStats(): Record<string, { total_poin: number; logged_date
   }
 }
 
-function saveStoredHabitStats(stats: Record<string, { total_poin: number; logged_dates: string[] }>): void {
+export function saveStoredHabitStats(stats: Record<string, { total_poin: number; logged_dates: string[] }>): void {
   inMemoryHabitStats = stats;
   if (typeof window === 'undefined') return;
   try {

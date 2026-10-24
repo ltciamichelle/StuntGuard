@@ -105,3 +105,25 @@ export interface RingkasanPengasuh {
   status_terakhir: StatusGizi | string | null;
   tgl_ukur_terakhir: string | null;
 }
+
+export type KategoriArtikel = 'artikel' | 'resep';
+
+export interface Artikel {
+  id: string | number;
+  judul: string;
+  ringkasan: string;
+  konten: string;
+  kategori: KategoriArtikel;
+  foto_url?: string | null;
+  waktu_masak_menit?: number | null;
+  perkiraan_harga_rp?: number | null;
+  usia_min_bulan: number;
+  usia_max_bulan: number;
+  untuk_status?: StatusGizi | string | null; // e.g. 'kuning', 'merah', 'hijau', or null/empty for all
+  ditinjau: boolean;
+  peninjau_nama?: string | null;
+  ditinjau_pada?: string | null;
+  published: boolean;
+  created_at?: string;
+}
+

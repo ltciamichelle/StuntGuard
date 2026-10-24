@@ -19,6 +19,7 @@ import {
   getTbuChartSentence,
   getBbuChartSentence,
 } from '@/lib/growthChartUtils';
+import { getCaregiverStatusSentence } from '@/lib/caregiverStatusConfig';
 import { Ruler, Scale, Info, CheckCircle2, AlertTriangle, AlertOctagon } from 'lucide-react';
 
 interface GrowthChartsProps {
@@ -26,6 +27,8 @@ interface GrowthChartsProps {
   measurements: Pengukuran[];
   selectedMeasurementId?: string;
   className?: string;
+  variant?: 'kader' | 'caregiver';
+  caregiverSentence?: string;
 }
 
 interface ChartDataPoint {
@@ -47,6 +50,8 @@ export function GrowthCharts({
   measurements,
   selectedMeasurementId,
   className = '',
+  variant = 'kader',
+  caregiverSentence,
 }: GrowthChartsProps) {
   const [mounted, setMounted] = useState(false);
   const [tbuRef, setTbuRef] = useState<any[]>([]);
@@ -264,24 +269,26 @@ export function GrowthCharts({
           </div>
         )}
 
-        <div className="space-y-0.5 text-slate-300 font-mono text-[11px]">
-          <div className="flex justify-between">
-            <span className="text-emerald-400">+2 SD:</span>
-            <span>{data.sdPlus2} {unit}</span>
+        {variant !== 'caregiver' && (
+          <div className="space-y-0.5 text-slate-300 font-mono text-[11px]">
+            <div className="flex justify-between">
+              <span className="text-emerald-400">+2 SD:</span>
+              <span>{data.sdPlus2} {unit}</span>
+            </div>
+            <div className="flex justify-between font-bold text-white">
+              <span className="text-teal-300">Median:</span>
+              <span>{data.median} {unit}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-amber-400">-2 SD:</span>
+              <span>{data.sdMinus2} {unit}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-rose-400">-3 SD:</span>
+              <span>{data.sdMinus3} {unit}</span>
+            </div>
           </div>
-          <div className="flex justify-between font-bold text-white">
-            <span className="text-teal-300">Median:</span>
-            <span>{data.median} {unit}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-amber-400">-2 SD:</span>
-            <span>{data.sdMinus2} {unit}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-rose-400">-3 SD:</span>
-            <span>{data.sdMinus3} {unit}</span>
-          </div>
-        </div>
+        )}
       </div>
     );
   };
@@ -355,20 +362,37 @@ export function GrowthCharts({
           </div>
 
           {/* Color Band Legend (Never color alone, text labels included) */}
-          <div className="flex flex-wrap items-center gap-2 text-[13px] font-bold">
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100/70 border border-emerald-300 text-emerald-900">
-              <CheckCircle2 size={14} className="text-emerald-700" />
-              <span>Normal (&gt; -1 SD)</span>
-            </span>
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100/70 border border-amber-300 text-amber-900">
-              <AlertTriangle size={14} className="text-amber-700" />
-              <span>Waspada (-2 s/d -1 SD)</span>
-            </span>
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-100/70 border border-rose-300 text-rose-900">
-              <AlertOctagon size={14} className="text-rose-700" />
-              <span>Stunting (&lt; -2 SD)</span>
-            </span>
-          </div>
+          {variant === 'caregiver' ? (
+            <div className="flex flex-wrap items-center gap-2 text-[13px] font-bold">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100/70 border border-emerald-300 text-emerald-900">
+                <CheckCircle2 size={14} className="text-emerald-700" />
+                <span>Sesuai Jalur</span>
+              </span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100/70 border border-amber-300 text-amber-900">
+                <AlertTriangle size={14} className="text-amber-700" />
+                <span>Perlu Perhatian</span>
+              </span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-100/70 border border-rose-300 text-rose-900">
+                <AlertOctagon size={14} className="text-rose-700" />
+                <span>Perlu Pemeriksaan</span>
+              </span>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2 text-[13px] font-bold">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100/70 border border-emerald-300 text-emerald-900">
+                <CheckCircle2 size={14} className="text-emerald-700" />
+                <span>Normal (&gt; -1 SD)</span>
+              </span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100/70 border border-amber-300 text-amber-900">
+                <AlertTriangle size={14} className="text-amber-700" />
+                <span>Waspada (-2 s/d -1 SD)</span>
+              </span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-100/70 border border-rose-300 text-rose-900">
+                <AlertOctagon size={14} className="text-rose-700" />
+                <span>Stunting (&lt; -2 SD)</span>
+              </span>
+            </div>
+          )}
 
           {/* Chart Canvas with horizontal scroll wrapper for small mobile screens */}
           <div className="overflow-x-auto -mx-2 px-2">
@@ -517,13 +541,17 @@ export function GrowthCharts({
           {/* Plain Indonesian sentence explaining status */}
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
             <p className="text-[16px] font-bold text-slate-900 leading-snug">
-              {getTbuChartSentence(highlightedMeasurement?.z_tbu)}
+              {variant === 'caregiver'
+                ? caregiverSentence || getCaregiverStatusSentence(highlightedMeasurement?.status)
+                : getTbuChartSentence(highlightedMeasurement?.z_tbu)}
             </p>
           </div>
 
           {/* Mandatory Visual Guide Note */}
           <p className="text-[14px] text-slate-600 font-medium text-center italic">
-            * Pita warna hanya panduan visual. Status resmi dihitung sistem.
+            {variant === 'caregiver'
+              ? 'Pita warna hanya panduan visual. Penilaian resmi dilakukan petugas.'
+              : '* Pita warna hanya panduan visual. Status resmi dihitung sistem.'}
           </p>
         </div>
       )}
@@ -560,16 +588,29 @@ export function GrowthCharts({
           </div>
 
           {/* Color Band Legend (BB/U: weight alone never shows red) */}
-          <div className="flex flex-wrap items-center gap-2 text-[13px] font-bold">
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100/70 border border-emerald-300 text-emerald-900">
-              <CheckCircle2 size={14} className="text-emerald-700" />
-              <span>Normal (&gt; -2 SD)</span>
-            </span>
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100/70 border border-amber-300 text-amber-900">
-              <AlertTriangle size={14} className="text-amber-700" />
-              <span>Berat kurang (&lt; -2 SD)</span>
-            </span>
-          </div>
+          {variant === 'caregiver' ? (
+            <div className="flex flex-wrap items-center gap-2 text-[13px] font-bold">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100/70 border border-emerald-300 text-emerald-900">
+                <CheckCircle2 size={14} className="text-emerald-700" />
+                <span>Sesuai Jalur</span>
+              </span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100/70 border border-amber-300 text-amber-900">
+                <AlertTriangle size={14} className="text-amber-700" />
+                <span>Perlu Perhatian</span>
+              </span>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2 text-[13px] font-bold">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100/70 border border-emerald-300 text-emerald-900">
+                <CheckCircle2 size={14} className="text-emerald-700" />
+                <span>Normal (&gt; -2 SD)</span>
+              </span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100/70 border border-amber-300 text-amber-900">
+                <AlertTriangle size={14} className="text-amber-700" />
+                <span>Berat kurang (&lt; -2 SD)</span>
+              </span>
+            </div>
+          )}
 
           {/* Chart Canvas with horizontal scroll wrapper */}
           <div className="overflow-x-auto -mx-2 px-2">
@@ -709,13 +750,17 @@ export function GrowthCharts({
           {/* Plain Indonesian sentence explaining status */}
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
             <p className="text-[16px] font-bold text-slate-900 leading-snug">
-              {getBbuChartSentence(highlightedMeasurement?.z_bbu)}
+              {variant === 'caregiver'
+                ? caregiverSentence || getCaregiverStatusSentence(highlightedMeasurement?.status)
+                : getBbuChartSentence(highlightedMeasurement?.z_bbu)}
             </p>
           </div>
 
           {/* Mandatory Visual Guide Note */}
           <p className="text-[14px] text-slate-600 font-medium text-center italic">
-            * Pita warna hanya panduan visual. Status resmi dihitung sistem.
+            {variant === 'caregiver'
+              ? 'Pita warna hanya panduan visual. Penilaian resmi dilakukan petugas.'
+              : '* Pita warna hanya panduan visual. Status resmi dihitung sistem.'}
           </p>
         </div>
       )}

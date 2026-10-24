@@ -61,6 +61,7 @@ export class StuntGuardDexieDB extends Dexie {
   pengasuh_anak_cache!: Table<CachedPengasuhAnak, [string, string]>;
   mpasi_log_cache!: Table<import('@/types/database').MpasiLog, string>;
   mpasi_menu_cache!: Table<import('@/types/database').MpasiMenu, string | number>;
+  artikel_cache!: Table<import('@/types/database').Artikel, string | number>;
 
   constructor() {
     super('StuntGuardDB');
@@ -78,6 +79,9 @@ export class StuntGuardDexieDB extends Dexie {
     this.version(4).stores({
       mpasi_log_cache: 'id, anak_id, user_id, menu_id, tgl',
       mpasi_menu_cache: 'id, kelompok, usia_min_bulan',
+    });
+    this.version(5).stores({
+      artikel_cache: 'id, kategori, usia_min_bulan, usia_max_bulan, untuk_status, published',
     });
   }
 }
